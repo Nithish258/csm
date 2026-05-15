@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "tenant": {
+      "title": "Tenant",
+      "description": "Represents a cold storage company/subscriber.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string", "description": "Unique URL slug for the tenant" },
+        "ownerId": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "slug", "ownerId"]
+    },
+    "user": {
+      "title": "User",
+      "description": "System users with specific roles.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "enum": ["ADMIN", "OPERATOR", "ACCOUNTANT", "CLIENT", "SUPER_ADMIN"] },
+        "tenantId": { "type": "string" },
+        "tenantSlug": { "type": "string" },
+        "phone": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["name", "email", "role", "tenantId"]
+    },
+    "product": {
+      "title": "Product",
+      "description": "Agricultural commodities.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "tenantId": { "type": "string" }
+      }
+    },
+    "client": {
+      "title": "Client",
+      "description": "Customers who store goods.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "balance": { "type": "number" },
+        "tenantId": { "type": "string" }
+      }
+    },
+    "stock": {
+      "title": "Stock",
+      "description": "Current inventory.",
+      "type": "object",
+      "properties": {
+        "tenantId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "productId": { "type": "string" },
+        "locationId": { "type": "string" },
+        "bags": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "tenants": { "schema": "tenant", "description": "Tenants/Organizations" },
+    "users": { "schema": "user", "description": "Users" },
+    "products": { "schema": "product", "description": "Warehouse Commodities" },
+    "clients": { "schema": "client", "description": "Storage Customers" },
+    "locations": { "schema": "location", "description": "Warehouse Layout" },
+    "incomingShipments": { "schema": "incomingShipment", "description": "Intake Records" },
+    "stock": { "schema": "stock", "description": "Live Inventory" },
+    "outgoingShipments": { "schema": "outgoingShipment", "description": "Dispatch Records" },
+    "invoices": { "schema": "invoice", "description": "Billing" },
+    "payments": { "schema": "payment", "description": "Collections" },
+    "expenses": { "schema": "expense", "description": "Operational Costs" },
+    "auditLogs": { "schema": "auditLog", "description": "System Audit Trail" }
+  }
+}
