@@ -133,7 +133,8 @@ export default function Incoming() {
         weight: 0,
         vehicleNumber: '',
         driverNumber: '',
-        notes: ''
+        notes: '',
+        subSlot: ''
       });
     } catch (error: any) {
       await draftQueue.saveDraft('INCOMING', formData);
@@ -281,7 +282,7 @@ export default function Incoming() {
                  </div>
 
                  {/* Step 4: Storage layout and quantity */}
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="space-y-2">
                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Bags Quantity</Label>
                        <Input 
@@ -307,7 +308,7 @@ export default function Incoming() {
                        <select 
                          required
                          value={formData.locationId}
-                         onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
+                         onChange={(e) => setFormData({ ...formData, locationId: e.target.value, subSlot: '' })}
                          className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350"
                        >
                           <option value="">Select Target Block</option>
@@ -318,6 +319,22 @@ export default function Incoming() {
                           ))}
                        </select>
                     </div>
+                    {selectedLoc && selectedLoc.subSlots && (
+                       <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Sub-Slot</Label>
+                          <select 
+                            required
+                            value={formData.subSlot || ''}
+                            onChange={(e) => setFormData({ ...formData, subSlot: e.target.value })}
+                            className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350"
+                          >
+                             <option value="">Select Sub-Slot</option>
+                             {selectedLoc.subSlots.split(',').map((s: string) => s.trim()).filter(Boolean).map((s: string) => (
+                               <option key={s} value={s}>{s}</option>
+                             ))}
+                          </select>
+                       </div>
+                    )}
                  </div>
 
                  {/* Realtime Block status feedback gauge */}

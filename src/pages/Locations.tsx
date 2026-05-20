@@ -30,8 +30,10 @@ export default function Locations() {
   const { t } = useTranslation();
   const { tenant } = useAuthStore();
   const [locations, setLocations] = useState<any[]>([]);
+  const [stocks, setStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSlotDetails, setSelectedSlotDetails] = useState<{ loc: any, slot: string } | null>(null);
   
   // Search and Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +49,8 @@ export default function Locations() {
 
   useEffect(() => {
     const unsub = dbService.sync('locations', setLocations);
-    return () => unsub();
+    const unsub2 = dbService.sync('incoming_shipments', setStocks);
+    return () => { unsub(); unsub2(); };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -286,11 +289,19 @@ export default function Locations() {
                                     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
                                         <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Sub-Slots / Sub-Blocks</p>
                                         <div className="grid grid-cols-4 gap-2">
-                                            {(loc.subSlots ? loc.subSlots.split(',').map((s: string) => s.trim()).filter(Boolean) : [1, 2, 3, 4]).map((slot: any) => (
-                                                <div key={slot} className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center text-[8px] font-bold text-slate-400 uppercase">
+                                            {(loc.subSlots ? loc.subSlots.split(',').map((s: string) => s.trim()).filter(Boolean) : [1, 2, 3, 4]).map((slot: any) => {
+                                                const slotStocks = stocks.filter(s => s.locationId === loc.id && s.subSlot === slot && s.quantity > 0);
+                                                const isOccupied = slotStocks.length > 0;
+                                                return (
+                                                <div 
+                                                    key={slot} 
+                                                    onClick={() => setSelectedSlotDetails({ loc, slot })}
+                                                    className={`h-8 rounded-lg border flex items-center justify-center text-[8px] font-bold uppercase cursor-pointer transition-colors ${isOccupied ? 'bg-emerald-500 text-white border-emerald-600 shadow-md' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 text-slate-400 hover:border-emerald-500'}`}
+                                                >
                                                     {slot.toString().length > 2 ? slot : (slot.toString().startsWith('S') ? slot : `S${slot}`)}
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </motion.div>
@@ -334,6 +345,58 @@ export default function Locations() {
               </form>
            </DialogContent>
         </Dialog>
+         {/* Sub-Slot Details Dialog */}
+         <Dialog open={!!selectedSlotDetails} onOpenChange={(open) => !open && setSelectedSlotDetails(null)}>
+            <DialogContent className="max-w-3xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl">
+               {selectedSlotDetails && (
+                  <div className="space-y-6">
+                     <DialogHeader>
+                        <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-800 dark:text-white">
+                           {selectedSlotDetails.loc.chamber} › {selectedSlotDetails.loc.floor} › {selectedSlotDetails.loc.name} › <span className="text-emerald-500">Sub-Slot {selectedSlotDetails.slot}</span>
+                        </DialogTitle>
+                     </DialogHeader>
+                     
+                     <div className="space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">Active Custody Stock Details</p>
+                        <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-4">
+                           {(() => {
+                              const slotStocks = stocks.filter(s => s.locationId === selectedSlotDetails.loc.id && s.subSlot === selectedSlotDetails.slot && s.quantity > 0);
+                              if (slotStocks.length === 0) {
+                                 return (
+                                    <div className="py-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                                       <p className="text-xs text-slate-400 italic">This sub-slot is currently empty.</p>
+                                    </div>
+                                 );
+                              }
+                              return slotStocks.map(stock => (
+                                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={stock.id} className="p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-center group hover:border-emerald-500/50 transition-colors">
+                                    <div className="space-y-1">
+                                       <div className="flex items-center gap-2 mb-2">
+                                          <Badge className="bg-blue-500/10 text-blue-500 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase tracking-widest">{stock.inBillNumber}</Badge>
+                                          {stock.mark && <Badge className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase tracking-widest">Mark: {stock.mark}</Badge>}
+                                       </div>
+                                       <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase leading-none">{stock.clientName}</h4>
+                                       {stock.farmerName && <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Farmer: {stock.farmerName}</p>}
+                                       <p className="text-[11px] text-slate-600 dark:text-slate-300 font-bold uppercase mt-2">
+                                          {stock.commodityName} <span className="text-slate-400">›</span> <span className="text-emerald-500">{stock.varietyName}</span>
+                                       </p>
+                                    </div>
+                                    <div className="text-right flex flex-col items-end gap-2">
+                                       <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
+                                          <Boxes className="h-6 w-6 text-emerald-500" />
+                                       </div>
+                                       <p className="text-xl font-black italic text-emerald-500 tracking-tighter">{stock.quantity} <span className="text-[9px] font-bold text-slate-400 uppercase not-italic tracking-widest">Bags</span></p>
+                                    </div>
+                                 </motion.div>
+                              ));
+                           })()}
+                        </div>
+                     </div>
+                  </div>
+               )}
+            </DialogContent>
+         </Dialog>
+
       </div>
     </Layout>
   );
