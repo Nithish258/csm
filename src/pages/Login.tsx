@@ -68,7 +68,9 @@ export default function Login() {
 
   const toggleLanguage = () => {
     const langs = ['en', 'te', 'hi'];
-    i18n.changeLanguage(langs[(langs.indexOf(i18n.language) + 1) % langs.length]);
+    const nextLang = langs[(langs.indexOf(i18n.language) + 1) % langs.length];
+    i18n.changeLanguage(nextLang);
+    localStorage.setItem('i18nextLng', nextLang);
   };
 
   // Generate particle system
@@ -192,7 +194,7 @@ export default function Login() {
               <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">
                 ColdChain <span className="text-emerald-400">OS</span>
               </h1>
-              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-600">Enterprise Platform v4.2</p>
+              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-600">{t('auth.platformVersion')}</p>
             </div>
           </div>
 

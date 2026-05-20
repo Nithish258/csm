@@ -77,7 +77,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const toggleLanguage = () => {
     const langs = ['en', 'te', 'hi'];
     const nextIndex = (langs.indexOf(i18n.language) + 1) % langs.length;
-    i18n.changeLanguage(langs[nextIndex]);
+    const nextLang = langs[nextIndex];
+    i18n.changeLanguage(nextLang);
+    localStorage.setItem('i18nextLng', nextLang);
   };
 
   return (

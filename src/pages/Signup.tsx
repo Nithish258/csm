@@ -35,7 +35,9 @@ export default function Signup() {
 
   const toggleLanguage = () => {
     const langs = ['en', 'te', 'hi'];
-    i18n.changeLanguage(langs[(langs.indexOf(i18n.language) + 1) % langs.length]);
+    const nextLang = langs[(langs.indexOf(i18n.language) + 1) % langs.length];
+    i18n.changeLanguage(nextLang);
+    localStorage.setItem('i18nextLng', nextLang);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -121,7 +123,7 @@ export default function Signup() {
             </motion.div>
             <div>
               <h1 className="text-xl font-black text-white tracking-tighter uppercase italic">ColdChain <span className="text-emerald-400">OS</span></h1>
-              <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-600">Enterprise Platform v4.2</p>
+              <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-600">{t('auth.platformVersion')}</p>
             </div>
           </div>
 
@@ -195,7 +197,7 @@ export default function Signup() {
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.orgLabel')}</label>
                   <div className="relative group">
                     <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
-                    <input placeholder="Skyline Cold Storage" className={inputClass}
+                    <input placeholder={t('auth.orgPlaceholder')} className={inputClass}
                       value={formData.orgName} onChange={(e) => setFormData({ ...formData, orgName: e.target.value })} required />
                   </div>
                 </div>
@@ -203,7 +205,7 @@ export default function Signup() {
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.ownerLabel')}</label>
                   <div className="relative group">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
-                    <input placeholder="Nithish Reddy" className={inputClass}
+                    <input placeholder={t('auth.ownerPlaceholder')} className={inputClass}
                       value={formData.ownerName} onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })} required />
                   </div>
                 </div>
@@ -211,7 +213,7 @@ export default function Signup() {
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.emailLabel')}</label>
                   <div className="relative group">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
-                    <input type="email" placeholder="admin@skyline.os" className={inputClass}
+                    <input type="email" placeholder={t('auth.emailPlaceholder')} className={inputClass}
                       value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                   </div>
                 </div>
@@ -219,7 +221,7 @@ export default function Signup() {
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.phoneLabel')}</label>
                   <div className="relative group">
                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
-                    <input type="tel" placeholder="+91 99999 99999" className={inputClass}
+                    <input type="tel" placeholder={t('auth.phonePlaceholder')} className={inputClass}
                       value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required />
                   </div>
                 </div>

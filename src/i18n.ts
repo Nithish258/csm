@@ -65,7 +65,14 @@ const resources = {
         brandWorkspace: "warehouse workspace.",
         brandSetupDesc: "Create your cold storage workspace, register merchants, and start managing inventory in minutes.",
         enterEmailFirst: "Enter your email first",
-        resetSent: "Recovery email sent"
+        resetSent: "Recovery email sent",
+        platformVersion: "Enterprise Platform v4.2",
+        statTemp: "Temp Control",
+        statStorage: "Active Lots",
+        statChambers: "Chambers",
+        orgPlaceholder: "e.g. Skyline Cold Storage",
+        ownerPlaceholder: "e.g. Nithish Reddy",
+        phonePlaceholder: "e.g. +91 99999 99999"
       },
       reports: {
         title: "Analytical Reports Hub",
@@ -273,7 +280,7 @@ const resources = {
         register: "వర్క్‌స్పేస్ నమోదు",
         newAccount: "కొత్త ఆపరేటరా? వర్క్‌స్పేస్ సృష్టించండి",
         loginSuccess: "యాక్సెస్ కీ ధృవీకరించబడింది. లోడ్ అవుతోంది...",
-        credentialsError: "యాక్సెస్ తిరస్కరించబడింది: తప్పుడు వివరాలు",
+        credentialsError: "ఆపెస్ తిరస్కరించబడింది: తప్పుడు వివరాలు",
         gstLabel: "GST సంఖ్య",
         phoneLabel: "మొబైల్ సంఖ్య",
         ownerLabel: "యజమాని పేరు",
@@ -289,7 +296,14 @@ const resources = {
         brandWorkspace: "గిడ్డంగి వర్క్‌స్పేస్.",
         brandSetupDesc: "మీ కోల్డ్ స్టోరేజ్ వర్క్‌స్పేస్‌ను సృష్టించండి, వ్యాపారులను నమోదు చేయండి మరియు నిమిషాల్లో ఇన్వెంటరీ నిర్వహించడం ప్రారంభించండి.",
         enterEmailFirst: "ముందుగా మీ ఈమెయిల్ నమోదు చేయండి",
-        resetSent: "రికవరీ ఈమెయిల్ పంపబడింది"
+        resetSent: "రికవరీ ఈమెయిల్ పంపబడింది",
+        platformVersion: "ఎంటర్‌ప్రైజ్ ప్లాట్‌ఫారమ్ v4.2",
+        statTemp: "ఉష్ణోగ్రత నియంత్రణ",
+        statStorage: "యాక్టివ్ లాట్లు",
+        statChambers: "ఛాంబర్లు",
+        orgPlaceholder: "ఉదా: స్కైలైన్ కోల్డ్ స్టోరేజ్",
+        ownerPlaceholder: "ఉదా: నితీష్ రెడ్డి",
+        phonePlaceholder: "ఉదా: +91 99999 99999"
       },
       reports: {
         title: "విశ్లేషణాత్మక నివేదికల కేంద్రం",
@@ -513,7 +527,14 @@ const resources = {
         brandWorkspace: "गोदाम कार्यक्षेत्र.",
         brandSetupDesc: "अपना कोल्ड स्टोरेज कार्यक्षेत्र बनाएं, व्यापारियों को पंजीकृत करें और मिनटों में इन्वेंट्री प्रबंधन शुरू करें.",
         enterEmailFirst: "पहले अपना ईमेल दर्ज करें",
-        resetSent: "पुनर्प्राप्ति ईमेल भेजा गया"
+        resetSent: "पुनर्प्राप्ति ईमेल भेजा गया",
+        platformVersion: "एंटरप्राइज प्लेटफॉर्म v4.2",
+        statTemp: "तापमान नियंत्रण",
+        statStorage: "सक्रिय लॉट",
+        statChambers: "चैंबर",
+        orgPlaceholder: "जैसे: स्काईलाइन कोल्ड स्टोरेज",
+        ownerPlaceholder: "जैसे: नितीश रेड्डी",
+        phonePlaceholder: "जैसे: +91 99999 99999"
       },
       reports: {
         title: "विश्लेषणात्मक रिपोर्ट केंद्र",
@@ -676,11 +697,13 @@ const resources = {
   }
 };
 
+const savedLang = typeof window !== 'undefined' ? (localStorage.getItem('i18nextLng') || 'en') : 'en';
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: "en",
+    lng: savedLang,
     fallbackLng: "en",
     interpolation: {
       escapeValue: false
