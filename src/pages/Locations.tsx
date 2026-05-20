@@ -42,7 +42,7 @@ export default function Locations() {
     chamber: '',
     floor: '',
     name: '', // Block Name
-    capacity: 500,
+    subSlots: '',
   });
 
   useEffect(() => {
@@ -58,6 +58,7 @@ export default function Locations() {
     try {
       await dbService.add('locations', {
         ...formData,
+        capacity: 500, // Provide default capacity for legacy components
         occupied: 0,
         utilization: 0,
         status: 'EMPTY',
@@ -67,7 +68,7 @@ export default function Locations() {
 
       toast.success('Storage Block registered successfully');
       setIsDialogOpen(false);
-      setFormData({ chamber: '', floor: '', name: '', capacity: 500 });
+      setFormData({ chamber: '', floor: '', name: '', subSlots: '' });
     } catch (error: any) {
       toast.error(error.message || 'Operation failed');
     } finally {
@@ -285,9 +286,9 @@ export default function Locations() {
                                     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
                                         <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Sub-Slots / Sub-Blocks</p>
                                         <div className="grid grid-cols-4 gap-2">
-                                            {[1, 2, 3, 4].map(slot => (
-                                                <div key={slot} className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center text-[8px] font-bold text-slate-400">
-                                                    S{slot}
+                                            {(loc.subSlots ? loc.subSlots.split(',').map((s: string) => s.trim()).filter(Boolean) : [1, 2, 3, 4]).map((slot: any) => (
+                                                <div key={slot} className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center text-[8px] font-bold text-slate-400 uppercase">
+                                                    {slot.toString().length > 2 ? slot : (slot.toString().startsWith('S') ? slot : `S${slot}`)}
                                                 </div>
                                             ))}
                                         </div>
@@ -324,8 +325,8 @@ export default function Locations() {
                     </div>
                  </div>
                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Max Capacity (Bags)</Label>
-                    <Input type="number" required value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-lg font-black italic outline-none" />
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Subslot / Subblock</Label>
+                    <Input required placeholder="e.g. S1, S2, A, B (comma separated)" value={formData.subSlots} onChange={(e) => setFormData({ ...formData, subSlots: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
                  </div>
                  <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
                     {loading ? 'Registering...' : 'Add Storage Slot'}

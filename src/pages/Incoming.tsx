@@ -180,7 +180,7 @@ export default function Incoming() {
 
         {/* Dialog Form */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-           <DialogContent className="max-w-6xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[90vh] overflow-y-auto">
+           <DialogContent className="w-[95vw] max-w-[1400px] rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader className="mb-6">
                  <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">Create Inward Entry</DialogTitle>
               </DialogHeader>
