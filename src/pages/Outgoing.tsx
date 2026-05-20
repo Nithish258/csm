@@ -179,110 +179,63 @@ export default function Outgoing() {
                </div>
                <p className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-xs">{t('outgoing.subtitle', 'Locate custody stocks in storage and authorize physical release dispatches.')}</p>
             </div>
+            
+            <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 dark:bg-blue-500 hover:bg-slate-800 dark:hover:bg-blue-600 text-white rounded-2xl px-8 h-14 font-bold uppercase tracking-wider text-xs shadow-xl transition-all hover:scale-[1.02] active:scale-95">
+               <Plus className="h-5 w-5 mr-3" /> New Outward Dispatch
+            </Button>
         </div>
 
-        <div className="space-y-6">
-           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">1. Locate Custody Lot in Storage</h3>
-              <div className="relative w-full sm:w-80">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                 <input 
-                   type="text" 
-                   value={searchQuery}
-                   onChange={(e) => setSearchQuery(e.target.value)}
-                   placeholder="Search by client, farmer, bill, mark..."
-                   className="w-full h-10 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 text-[10px] font-bold uppercase tracking-wider outline-none text-slate-900 dark:text-white placeholder:text-slate-500" 
-                 />
-              </div>
-           </div>
-
-           {/* Custody Lots Results Grid */}
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredLots.map(lot => {
-                 const remaining = lot.remainingBags !== undefined ? lot.remainingBags : lot.quantity;
-                 return (
-                    <motion.div
-                      key={lot.id}
-                      className="bg-transparent p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between min-h-[280px] hover:border-blue-500/50 group transition-all"
-                    >
-                       <div>
-                         <div className="flex justify-between items-start mb-6">
-                            <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-1 rounded-lg font-black text-[9px] uppercase tracking-widest">IN STORAGE</Badge>
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">{lot.inBillNumber}</span>
-                         </div>
-
-                         <div className="space-y-1 mb-6">
-                            <h4 className="text-xl font-black uppercase italic tracking-tighter text-slate-800 dark:text-white group-hover:text-blue-500 transition-colors leading-none">{lot.clientName}</h4>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Farmer: {lot.farmerName}</p>
-                         </div>
-
-                         <div className="grid grid-cols-2 gap-4 mb-6 pt-4 border-t border-slate-50 dark:border-slate-850">
-                            <div className="space-y-1">
-                               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Commodity Lot</p>
-                               <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">{lot.commodityName} ({lot.varietyName})</p>
-                            </div>
-                            <div className="space-y-1">
-                               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Cold room block</p>
-                               <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase truncate">{lot.chamber} › {lot.block}</p>
-                            </div>
-                         </div>
-                       </div>
-
-                       <div>
-                         <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl mb-4 border border-slate-100 dark:border-slate-800">
-                            <div>
-                               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Custody Stock</p>
-                               <p className="text-lg font-black italic tracking-tighter text-slate-850 dark:text-white">{remaining} / {lot.quantity} <span className="text-[9px] font-bold uppercase not-italic text-slate-400">Bags</span></p>
-                            </div>
-                            <div>
-                               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Bag Marks</p>
-                               <p className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-350">{lot.mark || 'N/A'}</p>
-                            </div>
-                         </div>
-
-                         <Button onClick={() => handleSelectLot(lot)} className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[9px]">
-                            Authorize Dispatch
-                         </Button>
-                       </div>
-                    </motion.div>
-                 );
-              })}
-              {filteredLots.length === 0 && (
-                 <div className="col-span-full py-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-                    <p className="text-xs text-slate-400 italic">No active custody lots matching query search.</p>
-                 </div>
-              )}
-           </div>
-        </div>
 
         {/* Section 2: Dispatch Authorization Form Dialog */}
-        <Dialog open={!!selectedLot} onOpenChange={(open) => !open && setSelectedLot(null)}>
-           <DialogContent className="max-w-4xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[90vh] overflow-y-auto">
-              {selectedLot && (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+           <DialogContent className="w-[95vw] max-w-[1400px] rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[90vh] overflow-y-auto">
                  <form onSubmit={handleSubmit} className="space-y-8">
                     <DialogHeader>
                        <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">Release Dispatch Authorization</DialogTitle>
                     </DialogHeader>
 
-                    {/* Pre-populated Lot Information */}
-                    <div className="p-6 bg-blue-50 dark:bg-blue-950/30 rounded-3xl border border-blue-100 dark:border-blue-900/30 grid grid-cols-2 md:grid-cols-4 gap-6">
-                       <div>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Merchant Client</p>
-                          <p className="text-xs font-black uppercase italic tracking-tighter text-blue-700 dark:text-blue-300">{selectedLot.clientName}</p>
-                       </div>
-                       <div>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Farmer linked</p>
-                          <p className="text-xs font-bold uppercase text-slate-700 dark:text-slate-350 truncate">{selectedLot.farmerName}</p>
-                       </div>
-                       <div>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Commodity Stock</p>
-                          <p className="text-xs font-bold uppercase text-slate-700 dark:text-slate-350">{selectedLot.commodityName} ({selectedLot.varietyName})</p>
-                       </div>
-                       <div>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Custody Room</p>
-                          <p className="text-xs font-bold uppercase text-slate-700 dark:text-slate-350">{selectedLot.chamber} › {selectedLot.floor} › {selectedLot.block}</p>
-                       </div>
+                    {/* Lot Selection */}
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Select Custody Lot for Release</Label>
+                       <select 
+                         required
+                         value={selectedLot?.id || ''}
+                         onChange={(e) => {
+                            const lot = inwardLots.find(l => l.id === e.target.value);
+                            handleSelectLot(lot);
+                         }}
+                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350"
+                       >
+                          <option value="">-- Choose Stock Lot --</option>
+                          {inwardLots.map(lot => (
+                             <option key={lot.id} value={lot.id}>
+                                {lot.clientName} | Farmer: {lot.farmerName} | Bill: {lot.inBillNumber} | Avail: {lot.remainingBags !== undefined ? lot.remainingBags : lot.quantity} bags
+                             </option>
+                          ))}
+                       </select>
                     </div>
+
+                    {/* Pre-populated Lot Information */}
+                    {selectedLot && (
+                       <div className="p-6 bg-blue-50 dark:bg-blue-950/30 rounded-3xl border border-blue-100 dark:border-blue-900/30 grid grid-cols-2 md:grid-cols-4 gap-6">
+                          <div>
+                             <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Merchant Client</p>
+                             <p className="text-xs font-black uppercase italic tracking-tighter text-blue-700 dark:text-blue-300">{selectedLot.clientName}</p>
+                          </div>
+                          <div>
+                             <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Farmer linked</p>
+                             <p className="text-xs font-bold uppercase text-slate-700 dark:text-slate-350 truncate">{selectedLot.farmerName}</p>
+                          </div>
+                          <div>
+                             <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Commodity Stock</p>
+                             <p className="text-xs font-bold uppercase text-slate-700 dark:text-slate-350">{selectedLot.commodityName} ({selectedLot.varietyName})</p>
+                          </div>
+                          <div>
+                             <p className="text-[8px] font-black uppercase tracking-widest text-blue-500">Custody Room</p>
+                             <p className="text-xs font-bold uppercase text-slate-700 dark:text-slate-350">{selectedLot.chamber} › {selectedLot.floor} › {selectedLot.block}</p>
+                          </div>
+                       </div>
+                    )}
 
                     {/* Step 1: Logistics Metadata */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -407,7 +360,6 @@ export default function Outgoing() {
                        </Button>
                     </div>
                  </form>
-              )}
            </DialogContent>
         </Dialog>
 
