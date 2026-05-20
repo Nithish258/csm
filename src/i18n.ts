@@ -56,7 +56,16 @@ const resources = {
         orgLabel: "Warehouse Org Name",
         createWorkspace: "Establish Warehouse Workspace",
         backToLogin: "Back to Secure Login",
-        encryptedEndpoint: "Encrypted Node: coldchain.node.v4"
+        encryptedEndpoint: "Encrypted Node: coldchain.node.v4",
+        brandTitle: "Enterprise",
+        brandSubtitle: "Cold Storage",
+        brandHighlight: "Operating System.",
+        brandDesc: "Digital infrastructure for warehouse management, logistics automation, and real-time register operations.",
+        brandSetup: "Set up your",
+        brandWorkspace: "warehouse workspace.",
+        brandSetupDesc: "Create your cold storage workspace, register merchants, and start managing inventory in minutes.",
+        enterEmailFirst: "Enter your email first",
+        resetSent: "Recovery email sent"
       },
       reports: {
         title: "Analytical Reports Hub",
@@ -189,7 +198,16 @@ const resources = {
         orgLabel: "కోల్డ్ స్టోరేజ్ సంస్థ పేరు",
         createWorkspace: "కోల్డ్ స్టోరేజ్ వర్క్‌స్పేస్ సృష్టించండి",
         backToLogin: "సురక్షిత లాగిన్ కు తిరిగి వెళ్లండి",
-        encryptedEndpoint: "సురక్షిత ఎండ్ పాయింట్: coldchain.node.v4"
+        encryptedEndpoint: "సురక్షిత ఎండ్ పాయింట్: coldchain.node.v4",
+        brandTitle: "ఎంటర్‌ప్రైజ్",
+        brandSubtitle: "కోల్డ్ స్టోరేజ్",
+        brandHighlight: "ఆపరేటింగ్ సిస్టమ్.",
+        brandDesc: "గిడ్డంగి నిర్వహణ, లాజిస్టిక్స్ ఆటోమేషన్ మరియు రియల్-టైమ్ రిజిస్టర్ కార్యకలాపాల కోసం డిజిటల్ మౌలిక సదుపాయం.",
+        brandSetup: "మీ సెటప్",
+        brandWorkspace: "గిడ్డంగి వర్క్‌స్పేస్.",
+        brandSetupDesc: "మీ కోల్డ్ స్టోరేజ్ వర్క్‌స్పేస్‌ను సృష్టించండి, వ్యాపారులను నమోదు చేయండి మరియు నిమిషాల్లో ఇన్వెంటరీ నిర్వహించడం ప్రారంభించండి.",
+        enterEmailFirst: "ముందుగా మీ ఈమెయిల్ నమోదు చేయండి",
+        resetSent: "రికవరీ ఈమెయిల్ పంపబడింది"
       },
       reports: {
         title: "విశ్లేషణాత్మక నివేదికల కేంద్రం",
@@ -322,7 +340,16 @@ const resources = {
         orgLabel: "कोल्ड स्टोरेज संस्था का नाम",
         createWorkspace: "कोल्ड स्टोरेज कार्यक्षेत्र बनाएं",
         backToLogin: "सुरक्षित लॉगिन पर वापस जाएं",
-        encryptedEndpoint: "सुरक्षित एंडपॉइंट: coldchain.node.v4"
+        encryptedEndpoint: "सुरक्षित एंडपॉइंट: coldchain.node.v4",
+        brandTitle: "एंटरप्राइज",
+        brandSubtitle: "कोल्ड स्टोरेज",
+        brandHighlight: "ऑपरेटिंग सिस्टम.",
+        brandDesc: "गोदाम प्रबंधन, लॉजिस्टिक्स ऑटोमेशन और रियल-टाइम रजिस्टर संचालन के लिए डिजिटल बुनियादी ढांचा.",
+        brandSetup: "अपना सेटअप करें",
+        brandWorkspace: "गोदाम कार्यक्षेत्र.",
+        brandSetupDesc: "अपना कोल्ड स्टोरेज कार्यक्षेत्र बनाएं, व्यापारियों को पंजीकृत करें और मिनटों में इन्वेंट्री प्रबंधन शुरू करें.",
+        enterEmailFirst: "पहले अपना ईमेल दर्ज करें",
+        resetSent: "पुनर्प्राप्ति ईमेल भेजा गया"
       },
       reports: {
         title: "विश्लेषणात्मक रिपोर्ट केंद्र",
