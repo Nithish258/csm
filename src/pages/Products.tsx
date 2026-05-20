@@ -2,92 +2,76 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { dbService } from '../services/db.service';
-import { 
-  Plus, 
-  Package, 
-  Search, 
-  Tag,
-  ArrowRight,
-  Pencil,
-  Trash2,
-  X,
-  Layers,
-  Settings,
-  Scale
-} from 'lucide-react';
+import { Plus, Package, Search, Pencil, Trash2, ArrowRight, Layers, X, ShieldAlert } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'motion/react';
-import { useAuthStore } from '../store/authStore';
 import { Badge } from '../components/ui/badge';
+import { useTranslation } from 'react-i18next';
+import { cn } from '../lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Products() {
   const { t } = useTranslation();
-  const { tenant } = useAuthStore();
   const [commodities, setCommodities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  
-  // Commodity Dialog
-  const [isCommodityOpen, setIsCommodityOpen] = useState(false);
-  const [editingCommodityId, setEditingCommodityId] = useState<string | null>(null);
-  const [commodityForm, setCommodityForm] = useState({ name: '', category: '' });
+  const [loading, setLoading] = useState(false);
 
-  // Detail & Variety Dialog
-  const [selectedCommodity, setSelectedCommodity] = useState<any>(null);
+  // Dialog states
+  const [isCommodityOpen, setIsCommodityOpen] = useState(false);
   const [isVarietyOpen, setIsVarietyOpen] = useState(false);
+  const [selectedCommodity, setSelectedCommodity] = useState<any | null>(null);
+
+  // Commodity form states
+  const [commodityForm, setCommodityForm] = useState({ name: '', category: '' });
+  const [editingCommodityId, setEditingCommodityId] = useState<string | null>(null);
+
+  // Variety form states
+  const [varietyForm, setVarietyForm] = useState({ name: '', unit: 'Bags', baseRate: 0 });
   const [editingVarietyId, setEditingVarietyId] = useState<string | null>(null);
-  const [varietyForm, setVarietyForm] = useState({ name: '', baseRate: 0, unit: 'Bags' });
 
   useEffect(() => {
-    // Sync using products collection name in Firestore to maintain backwards compatibility
-    const unsub = dbService.sync('products', setCommodities);
+    setLoading(true);
+    const unsub = dbService.sync('products', (data) => {
+      setCommodities(data);
+      setLoading(false);
+    });
     return () => unsub();
   }, []);
 
-  // Update selected commodity details dynamically on live data change
-  useEffect(() => {
-    if (selectedCommodity) {
-      const updated = commodities.find(c => c.id === selectedCommodity.id);
-      if (updated) setSelectedCommodity(updated);
-    }
-  }, [commodities]);
-
   const openCreateCommodity = () => {
-    setEditingCommodityId(null);
     setCommodityForm({ name: '', category: '' });
+    setEditingCommodityId(null);
     setIsCommodityOpen(true);
   };
 
   const openEditCommodity = (commodity: any, e: React.MouseEvent) => {
     e.stopPropagation();
+    setCommodityForm({ name: commodity.name || '', category: commodity.category || '' });
     setEditingCommodityId(commodity.id);
-    setCommodityForm({ name: commodity.name, category: commodity.category });
     setIsCommodityOpen(true);
   };
 
   const handleCommoditySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tenant) return;
-    
     setLoading(true);
     try {
       if (editingCommodityId) {
-        await dbService.update('products', editingCommodityId, commodityForm);
-        toast.success('Commodity updated successfully');
+        await dbService.update('products', editingCommodityId, {
+          name: commodityForm.name,
+          category: commodityForm.category,
+        });
+        toast.success('Commodity successfully updated');
       } else {
         await dbService.add('products', {
-          ...commodityForm,
+          name: commodityForm.name,
+          category: commodityForm.category,
           status: 'ACTIVE',
           varieties: [],
-          totalStock: 0,
-          lastUpdated: new Date()
         });
-        toast.success('Commodity registered successfully');
+        toast.success('New Commodity registered successfully');
       }
       setIsCommodityOpen(false);
     } catch (error: any) {
@@ -99,56 +83,62 @@ export default function Products() {
 
   const handleCommodityDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this Commodity and all its Varieties? This cannot be undone.')) return;
+    if (!confirm('Are you sure you want to delete this Commodity and all its Varieties? This action is irreversible.')) return;
     try {
       await dbService.delete('products', id);
       toast.success('Commodity deleted successfully');
-      if (selectedCommodity?.id === id) setSelectedCommodity(null);
     } catch (error: any) {
       toast.error(error.message || 'Delete failed');
     }
   };
 
+  // Variety management handlers
   const openAddVariety = () => {
+    setVarietyForm({ name: '', unit: 'Bags', baseRate: 0 });
     setEditingVarietyId(null);
-    setVarietyForm({ name: '', baseRate: 0, unit: 'Bags' });
     setIsVarietyOpen(true);
   };
 
   const openEditVariety = (variety: any) => {
+    setVarietyForm({
+      name: variety.name || '',
+      unit: variety.unit || 'Bags',
+      baseRate: variety.baseRate || 0
+    });
     setEditingVarietyId(variety.id);
-    setVarietyForm({ name: variety.name, baseRate: variety.baseRate, unit: variety.unit });
     setIsVarietyOpen(true);
   };
 
   const handleVarietySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCommodity) return;
-
     setLoading(true);
     try {
       const currentVarieties = selectedCommodity.varieties || [];
       let updatedVarieties = [];
 
       if (editingVarietyId) {
-        // Edit existing variety
         updatedVarieties = currentVarieties.map((v: any) => 
           v.id === editingVarietyId ? { ...v, ...varietyForm } : v
         );
-        toast.success('Variety updated');
+        toast.success('Sub-Variety updated');
       } else {
-        // Add new variety
         const newVariety = {
           id: `var-${Date.now()}`,
           ...varietyForm
         };
         updatedVarieties = [...currentVarieties, newVariety];
-        toast.success('Variety registered');
+        toast.success('Sub-Variety added');
       }
 
       await dbService.update('products', selectedCommodity.id, {
-        varieties: updatedVarieties,
-        lastUpdated: new Date()
+        varieties: updatedVarieties
+      });
+
+      // Update local state to reflect change inside details modal
+      setSelectedCommodity({
+        ...selectedCommodity,
+        varieties: updatedVarieties
       });
 
       setIsVarietyOpen(false);
@@ -160,12 +150,15 @@ export default function Products() {
   };
 
   const handleVarietyDelete = async (varietyId: string) => {
-    if (!selectedCommodity || !confirm('Delete this variety?')) return;
+    if (!selectedCommodity || !confirm('Are you sure you want to delete this Variety?')) return;
     try {
       const updatedVarieties = (selectedCommodity.varieties || []).filter((v: any) => v.id !== varietyId);
       await dbService.update('products', selectedCommodity.id, {
-        varieties: updatedVarieties,
-        lastUpdated: new Date()
+        varieties: updatedVarieties
+      });
+      setSelectedCommodity({
+        ...selectedCommodity,
+        varieties: updatedVarieties
       });
       toast.success('Variety deleted');
     } catch (error: any) {
@@ -226,7 +219,7 @@ export default function Products() {
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: i * 0.05 }}
                    onClick={() => setSelectedCommodity(commodity)}
-                   className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-premium border border-slate-100 dark:border-slate-800 group hover:border-emerald-500/50 hover:shadow-intense transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[250px]"
+                   className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-premium border border-slate-200/50 dark:border-slate-800 group hover:border-emerald-500/50 hover:shadow-intense transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[250px]"
                  >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-all" />
                     
@@ -242,21 +235,21 @@ export default function Products() {
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{commodity.category}</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-6 border-t border-slate-50 dark:border-slate-850">
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
                        <div className="space-y-1">
                           <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Varieties</p>
                           <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{(commodity.varieties || []).length} Types</p>
                        </div>
                        <div className="flex gap-2">
-                         <Button onClick={(e) => openEditCommodity(commodity, e)} variant="ghost" className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-850 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all p-0">
-                            <Pencil size={14} />
-                         </Button>
-                         <Button onClick={(e) => handleCommodityDelete(commodity.id, e)} variant="ghost" className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-850 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all p-0">
-                            <Trash2 size={14} />
-                         </Button>
-                         <Button variant="ghost" className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-850 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all p-0">
-                            <ArrowRight size={14} />
-                         </Button>
+                          <Button onClick={(e) => openEditCommodity(commodity, e)} variant="ghost" className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all p-0">
+                             <Pencil size={14} />
+                          </Button>
+                          <Button onClick={(e) => handleCommodityDelete(commodity.id, e)} variant="ghost" className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all p-0">
+                             <Trash2 size={14} />
+                          </Button>
+                          <Button variant="ghost" className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all p-0">
+                             <ArrowRight size={14} />
+                          </Button>
                        </div>
                     </div>
                  </motion.div>
@@ -266,9 +259,9 @@ export default function Products() {
 
         {/* Commodity Create / Edit Dialog */}
         <Dialog open={isCommodityOpen} onOpenChange={setIsCommodityOpen}>
-          <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-2xl">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">
+          <DialogContent className="max-w-md sm:max-w-[460px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden space-y-6">
+            <DialogHeader className="mb-2">
+              <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
                 {editingCommodityId ? 'Edit Commodity' : 'New Commodity'}
               </DialogTitle>
             </DialogHeader>
@@ -280,7 +273,7 @@ export default function Products() {
                   placeholder="e.g. Red Chilli, Cotton, Maize"
                   value={commodityForm.name}
                   onChange={(e) => setCommodityForm({ ...commodityForm, name: e.target.value })}
-                  className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" 
+                  className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
                 />
               </div>
               <div className="space-y-2">
@@ -290,10 +283,10 @@ export default function Products() {
                   placeholder="e.g. Spices, Grains, Cash Crops"
                   value={commodityForm.category}
                   onChange={(e) => setCommodityForm({ ...commodityForm, category: e.target.value })}
-                  className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" 
+                  className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
                 />
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
+              <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
                 {loading ? 'Saving...' : editingCommodityId ? 'Update Commodity' : 'Create Commodity'}
               </Button>
             </form>
@@ -302,16 +295,16 @@ export default function Products() {
 
         {/* Detailed Varieties View Dialog */}
         <Dialog open={!!selectedCommodity} onOpenChange={(open) => !open && setSelectedCommodity(null)}>
-          <DialogContent className="max-w-3xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl sm:max-w-3xl w-full rounded-[2.5rem] p-8 md:p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[85vh] overflow-y-auto custom-scrollbar space-y-6">
             {selectedCommodity && (
               <div className="space-y-8">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
                   <div>
                     <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-1 rounded-lg font-black text-[9px] uppercase tracking-widest mb-3">{selectedCommodity.category}</Badge>
-                    <h2 className="text-3xl font-black uppercase italic tracking-tighter text-slate-800 dark:text-white">{selectedCommodity.name}</h2>
+                    <h2 className="text-3xl font-black uppercase italic tracking-tighter text-slate-850 dark:text-white">{selectedCommodity.name}</h2>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Registry Code: {selectedCommodity.id}</p>
                   </div>
-                  <Button onClick={openAddVariety} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-xl px-6 h-12 font-bold uppercase tracking-wider text-[10px] gap-2">
+                  <Button onClick={openAddVariety} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-xl px-6 h-12 font-bold uppercase tracking-wider text-[10px] gap-2 shadow-md">
                     <Plus size={16} /> Add Variety
                   </Button>
                 </div>
@@ -338,10 +331,10 @@ export default function Products() {
                               <td className="px-6 py-4 text-xs font-bold text-emerald-500">₹{variety.baseRate || 0}</td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button onClick={() => openEditVariety(variety)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-blue-500 hover:text-white p-0">
+                                  <Button onClick={() => openEditVariety(variety)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-emerald-500 hover:text-white p-0">
                                     <Pencil size={12} />
                                   </Button>
-                                  <Button onClick={() => handleVarietyDelete(variety.id)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-rose-500 hover:text-white p-0">
+                                  <Button onClick={() => handleVarietyDelete(variety.id)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-rose-500 hover:text-white p-0">
                                     <Trash2 size={12} />
                                   </Button>
                                 </div>
@@ -368,11 +361,11 @@ export default function Products() {
           </DialogContent>
         </Dialog>
 
-        {/* Variety Add / Edit Dialog */}
+        {/* Variety Add / Edit Dialog (Perfect Responsive Sizing to prevent clipping) */}
         <Dialog open={isVarietyOpen} onOpenChange={setIsVarietyOpen}>
-          <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-2xl z-[100]">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-xl font-black uppercase tracking-tighter italic">
+          <DialogContent className="max-w-md sm:max-w-[460px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl z-[200] overflow-hidden space-y-6">
+            <DialogHeader className="mb-2">
+              <DialogTitle className="text-xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
                 {editingVarietyId ? 'Edit Variety' : 'Add New Variety'}
               </DialogTitle>
             </DialogHeader>
@@ -384,7 +377,7 @@ export default function Products() {
                   placeholder="e.g. Teja, 341, Wonder Hot, Chapata"
                   value={varietyForm.name}
                   onChange={(e) => setVarietyForm({ ...varietyForm, name: e.target.value })}
-                  className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" 
+                  className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -394,7 +387,7 @@ export default function Products() {
                     required 
                     value={varietyForm.unit}
                     onChange={(e) => setVarietyForm({ ...varietyForm, unit: e.target.value })}
-                    className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" 
+                    className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
                   />
                 </div>
                 <div className="space-y-2">
@@ -404,11 +397,11 @@ export default function Products() {
                     required 
                     value={varietyForm.baseRate}
                     onChange={(e) => setVarietyForm({ ...varietyForm, baseRate: parseFloat(e.target.value) || 0 })}
-                    className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-lg font-black italic outline-none" 
+                    className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-lg font-black italic outline-none text-slate-900 dark:text-white" 
                   />
                 </div>
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
+              <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
                 {loading ? 'Saving...' : editingVarietyId ? 'Update Variety' : 'Add Variety'}
               </Button>
             </form>

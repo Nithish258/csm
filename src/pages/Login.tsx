@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Warehouse
+  Warehouse,
+  Globe
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '../components/ui/label';
@@ -32,7 +33,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
@@ -52,10 +53,10 @@ export default function Login() {
       } else {
         localStorage.removeItem('rememberedEmail');
       }
-      toast.success(t('auth.loginSuccess', 'Access Authorized'));
+      toast.success(t('auth.loginSuccess'));
       navigate('/');
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(t('auth.credentialsError'));
     } finally {
       setLoading(false);
     }
@@ -63,13 +64,13 @@ export default function Login() {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      toast.error('Please enter your email first to reset password.');
+      toast.error('Please enter your email first to recover access key.');
       return;
     }
     setResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      toast.success('Password reset email sent. Please check your inbox.');
+      toast.success('Access recovery code dispatched to your inbox.');
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -77,183 +78,272 @@ export default function Login() {
     }
   };
 
-  return (
-    <div className="min-h-screen w-full flex bg-slate-950 font-sans selection:bg-emerald-500/30 overflow-hidden">
-      {/* Left Column: Visual Brand Experience */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-[#020617] overflow-hidden items-center justify-center border-r border-white/5">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-        </div>
+  const toggleLanguage = () => {
+    const langs = ['en', 'te', 'hi'];
+    const nextIndex = (langs.indexOf(i18n.language) + 1) % langs.length;
+    i18n.changeLanguage(langs[nextIndex]);
+  };
 
-        <div className="relative z-10 p-20 max-w-2xl">
+  // Generate 25 floating particle dots with random parameters
+  const particles = Array.from({ length: 20 }).map((_, i) => ({
+    id: i,
+    size: Math.random() * 6 + 2,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    duration: Math.random() * 20 + 10,
+    delay: Math.random() * -20,
+  }));
+
+  return (
+    <div className="min-h-screen w-full flex bg-[#020617] font-sans selection:bg-emerald-500/30 overflow-hidden relative">
+      {/* Cinematic Tech Mesh Background Grid */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Glowing slow ambient meshes */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+            x: [0, 50, 0],
+            y: [0, -30, 0]
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] bg-gradient-radial from-emerald-500/10 via-transparent to-transparent rounded-full blur-[140px]" 
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            rotate: [180, 270, 180],
+            x: [0, -50, 0],
+            y: [0, 30, 0]
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -bottom-1/4 -right-1/4 w-[80%] h-[80%] bg-gradient-radial from-blue-500/8 via-transparent to-transparent rounded-full blur-[140px]" 
+        />
+        
+        {/* Animated perspective mesh grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-35" />
+
+        {/* Floating particles */}
+        {particles.map((p) => (
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            key={p.id}
+            className="absolute rounded-full bg-emerald-400/20 blur-[1px]"
+            style={{
+              width: p.size,
+              height: p.size,
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+            }}
+            animate={{
+              y: [0, -100, 0],
+              x: [0, Math.random() * 40 - 20, 0],
+              opacity: [0.2, 0.8, 0.2]
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Language Switcher in absolute header corner */}
+      <div className="absolute top-6 right-8 z-50 flex items-center gap-4">
+        <button 
+          onClick={toggleLanguage}
+          className="flex items-center gap-2 h-10 px-4 rounded-xl bg-slate-900/60 border border-white/10 hover:border-emerald-500/50 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest transition-all shadow-lg backdrop-blur-md active:scale-95"
+        >
+          <Globe size={14} className="text-emerald-400" />
+          {i18n.language.toUpperCase()}
+        </button>
+      </div>
+
+      {/* Left Column: Visual Brand Experience */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center z-10">
+        <div className="p-20 max-w-2xl">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
+            className="space-y-8"
           >
-            <div className="flex items-center gap-4 mb-12">
-               <div className="h-16 w-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-emerald-500/40">
-                  <Snowflake className="h-10 w-10 text-white" />
+            <div className="flex items-center gap-4">
+               <div className="h-16 w-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-[1.25rem] flex items-center justify-center shadow-2xl shadow-emerald-500/30">
+                  <Snowflake className="h-10 w-10 text-white animate-spin-slow" />
                </div>
-               <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">
+               <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">
                   ColdChain <span className="text-emerald-400">OS</span>
                </h1>
             </div>
             
-            <h2 className="text-6xl font-black text-white tracking-tight leading-[1.1] mb-8">
-              Digital Infrastructure for <span className="text-emerald-400">Modern Cold Storage.</span>
+            <h2 className="text-6xl font-black text-white tracking-tight leading-[1.05] uppercase italic">
+              Digital <br/>
+              Infrastructure for <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400">Modern Cold Storage.</span>
             </h2>
             
-            <p className="text-slate-400 text-lg font-medium leading-relaxed mb-12">
-              The next-generation operating system for enterprise-grade warehouse management, real-time telemetry, and logistics automation.
+            <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-lg">
+              The next-generation operating system for enterprise-grade warehouse management, real-time telemetry, and physical register logistics automation.
             </p>
 
-            <div className="grid grid-cols-2 gap-8">
-               <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-widest text-[10px]">
+            <div className="grid grid-cols-2 gap-8 pt-4">
+               <div className="space-y-2 border-l-2 border-emerald-500/40 pl-4">
+                  <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-widest text-[10px]">
                      <CheckCircle2 size={14} /> Global Standard
                   </div>
-                  <p className="text-slate-500 text-xs">Certified for ISO-9001 and high-security data protocols.</p>
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">ISO-9001 SECURITY COMPLIANT</p>
                </div>
-               <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-blue-400 font-bold uppercase tracking-widest text-[10px]">
+               <div className="space-y-2 border-l-2 border-blue-500/40 pl-4">
+                  <div className="flex items-center gap-2 text-blue-400 font-black uppercase tracking-widest text-[10px]">
                      <Clock size={14} /> Real-time Nodes
                   </div>
-                  <p className="text-slate-500 text-xs">Millisecond-level synchronization across all warehouse clusters.</p>
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">MILLISECOND SYNC LATENCY</p>
                </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Abstract Floating UI Elements */}
+        {/* Floating Telemetry Active Node - Aligned elegantly at the bottom left */}
         <motion.div 
-          animate={{ y: [0, -20, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-20 right-20 w-64 h-32 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="absolute bottom-16 left-20 w-80 bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 shadow-2xl space-y-4 hover:border-emerald-500/30 transition-all group"
         >
-           <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                 <span className="text-[10px] font-black text-white uppercase tracking-widest">Active Node</span>
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                 <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                 </span>
+                 <span className="text-[10px] font-black text-white uppercase tracking-widest">Active Node Telemetry</span>
               </div>
-              <Warehouse size={16} className="text-slate-500" />
+              <Warehouse size={16} className="text-emerald-500" />
            </div>
            <div className="space-y-2">
-              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                 <div className="h-full w-[82%] bg-emerald-500" />
+              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
+                 <span>Active Occupancy</span>
+                 <span className="text-emerald-400">82%</span>
               </div>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">82% Capacity</p>
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                 <div className="h-full w-[82%] bg-emerald-500 rounded-full" />
+              </div>
            </div>
         </motion.div>
       </div>
 
-      {/* Right Column: Authentication Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-20 relative">
-        <div className="absolute top-0 right-0 w-full h-full lg:hidden z-0">
-           <div className="absolute top-0 left-0 w-full h-full bg-[#020617] opacity-95" />
-           <div className="absolute top-0 -left-1/4 w-[1000px] h-[1000px] bg-emerald-500/10 rounded-full blur-[150px] animate-pulse" />
-        </div>
-
+      {/* Right Column: Authentication Form with Glassmorphic Card */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 lg:p-20 z-10 relative">
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-[440px] relative z-10"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-[480px] bg-slate-950/65 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 lg:p-12 shadow-2xl space-y-8 hover:border-emerald-500/20 transition-all relative"
         >
-          <div className="mb-12">
-            <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Initialize <span className="text-emerald-500">Access</span></h3>
-            <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Enter your operational credentials to proceed.</p>
+          {/* Subtle Parallax Card Light Reflection */}
+          <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-tr from-white/0 via-white/5 to-white/0 pointer-events-none" />
+
+          <div className="space-y-2">
+            <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">
+              {t('auth.login')} <span className="text-emerald-500">Access</span>
+            </h3>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px]">
+              {t('auth.backToLogin')}
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-8">
-            <div className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-5">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Operator Email</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  {t('auth.emailLabel')}
+                </Label>
                 <div className="relative group">
-                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600 group-focus-within:text-emerald-400 transition-colors z-20" />
+                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors z-20" />
                   <Input 
                     type="email" 
-                    placeholder="mail@warehouse.com" 
+                    placeholder={t('auth.emailPlaceholder')} 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-16 bg-white/[0.03] border-white/[0.08] rounded-[1.5rem] pl-16 pr-8 text-white text-sm font-bold focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-slate-700"
+                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl pl-14 pr-4 text-white text-xs font-bold focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-slate-700"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between px-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Access Key</Label>
+                <div className="flex items-center justify-between px-1">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    {t('auth.passwordLabel')}
+                  </Label>
                   <button 
                     type="button" 
                     onClick={handleForgotPassword}
                     disabled={resetLoading}
                     className="text-[9px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors"
                   >
-                    {resetLoading ? 'Transmitting...' : 'Forgot Access Key?'}
+                    {resetLoading ? 'Transmitting...' : t('auth.forgot')}
                   </button>
                 </div>
                 <div className="relative group">
-                  <Lock className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600 group-focus-within:text-emerald-400 transition-colors z-20" />
+                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors z-20" />
                   <Input 
                     type={showPassword ? "text" : "password"} 
-                    placeholder="••••••••" 
+                    placeholder={t('auth.passwordPlaceholder')} 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-16 bg-white/[0.03] border-white/[0.08] rounded-[1.5rem] pl-16 pr-16 text-white text-sm font-bold focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-slate-700"
+                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl pl-14 pr-14 text-white text-xs font-bold focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-slate-700"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-600 hover:text-emerald-400 transition-colors z-20 p-1"
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-emerald-400 transition-colors z-20 p-1"
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 px-2">
+            <div className="flex items-center space-x-3 px-1">
                <Checkbox 
                  id="remember" 
                  checked={rememberMe}
                  onCheckedChange={(checked) => setRememberMe(checked === true)}
-                 className="border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                 className="border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 rounded"
                />
-               <label htmlFor="remember" className="text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer select-none">
-                 Remember this device
+               <label htmlFor="remember" className="text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer select-none">
+                 {t('auth.remember')}
                </label>
             </div>
 
             <Button 
               type="submit" 
               disabled={loading}
-              className="w-full h-18 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-900/20 transition-all active:scale-[0.98] relative overflow-hidden"
+              className="w-full h-14 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-emerald-500/10 transition-all active:scale-[0.98] relative overflow-hidden"
             >
               {loading ? (
-                <div className="h-6 w-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <span className="flex items-center justify-center gap-3">
-                  Authorize Access <ArrowRight size={18} />
+                  {t('auth.login')} <ArrowRight size={16} />
                 </span>
               )}
             </Button>
           </form>
 
-          <div className="mt-10 pt-8 border-t border-white/[0.05] flex flex-col items-center gap-4">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-              New Node operator? 
+          <div className="pt-6 border-t border-white/5 flex flex-col items-center gap-4">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              {t('auth.newAccount')}?{' '}
               <Link to="/signup" className="ml-2 text-emerald-400 hover:text-emerald-300 transition-colors hover:underline">
-                Register Instance
+                {t('auth.register')}
               </Link>
             </p>
             <div className="flex items-center gap-2 text-[8px] font-black text-slate-700 uppercase tracking-widest">
-              <ShieldCheck size={12} className="text-emerald-900" /> Encrypted Endpoint: coldchain.node.v4
+              <ShieldCheck size={12} className="text-emerald-900" /> {t('auth.encryptedEndpoint')}
             </div>
           </div>
         </motion.div>

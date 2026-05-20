@@ -3,107 +3,97 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { dbService } from '../services/db.service';
 import { 
-  Plus, 
-  Users2, 
-  Search, 
-  Phone, 
-  Mail, 
-  MapPin,
-  ArrowRight,
-  Pencil,
-  Trash2,
-  Receipt,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  X,
-  UserCheck,
-  Building
+  Users2, Plus, Search, Pencil, Trash2, Building, Receipt, ArrowRight,
+  ArrowDownCircle, ArrowUpCircle, BookOpen, CreditCard, ExternalLink
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'motion/react';
-import { useAuthStore } from '../store/authStore';
 import { Badge } from '../components/ui/badge';
+import { useTranslation } from 'react-i18next';
+import { cn } from '../lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Clients() {
   const { t } = useTranslation();
-  const { tenant } = useAuthStore();
   const [clients, setClients] = useState<any[]>([]);
   const [incomingShipments, setIncomingShipments] = useState<any[]>([]);
   const [outgoingShipments, setOutgoingShipments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Client Dialog
+  // Dialog States
   const [isClientOpen, setIsClientOpen] = useState(false);
-  const [editingClientId, setEditingClientId] = useState<string | null>(null);
-  const [clientForm, setClientForm] = useState({ name: '', email: '', phone: '', address: '', gst: '' });
-
-  // Detail & Farmers Dialog
-  const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isFarmerOpen, setIsFarmerOpen] = useState(false);
-  const [editingFarmerId, setEditingFarmerId] = useState<string | null>(null);
-  const [farmerForm, setFarmerForm] = useState({ name: '', phone: '' });
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [ledgerClient, setLedgerClient] = useState<any | null>(null);
 
-  // Ledger Dialog
-  const [ledgerClient, setLedgerClient] = useState<any>(null);
+  // Form States
+  const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '', gst: '', address: '' });
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
+
+  const [farmerForm, setFarmerForm] = useState({ name: '', phone: '' });
+  const [editingFarmerId, setEditingFarmerId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsub1 = dbService.sync('clients', setClients);
-    const unsub2 = dbService.sync('incoming_shipments', setIncomingShipments);
-    const unsub3 = dbService.sync('outgoing_shipments', setOutgoingShipments);
-    return () => { unsub1(); unsub2(); unsub3(); };
+    setLoading(true);
+    // Real-time synchronization of clients
+    const unsubClients = dbService.sync('clients', (data) => {
+      setClients(data);
+      setLoading(false);
+    });
+
+    // Synchronize transactions for ledgers
+    const unsubIncoming = dbService.sync('incoming_shipments', (data) => {
+      setIncomingShipments(data);
+    });
+
+    const unsubOutgoing = dbService.sync('outgoing_shipments', (data) => {
+      setOutgoingShipments(data);
+    });
+
+    return () => {
+      unsubClients();
+      unsubIncoming();
+      unsubOutgoing();
+    };
   }, []);
 
-  // Update selected client dynamically on live changes
-  useEffect(() => {
-    if (selectedClient) {
-      const updated = clients.find(c => c.id === selectedClient.id);
-      if (updated) setSelectedClient(updated);
-    }
-  }, [clients]);
-
   const openCreateClient = () => {
+    setClientForm({ name: '', phone: '', email: '', gst: '', address: '' });
     setEditingClientId(null);
-    setClientForm({ name: '', email: '', phone: '', address: '', gst: '' });
     setIsClientOpen(true);
   };
 
   const openEditClient = (client: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditingClientId(client.id);
-    setClientForm({ 
-      name: client.name, 
-      email: client.email || '', 
-      phone: client.phone || '', 
-      address: client.address || '', 
-      gst: client.gst || '' 
+    setClientForm({
+      name: client.name || '',
+      phone: client.phone || '',
+      email: client.email || '',
+      gst: client.gst || '',
+      address: client.address || ''
     });
+    setEditingClientId(client.id);
     setIsClientOpen(true);
   };
 
   const handleClientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tenant) return;
-    
     setLoading(true);
     try {
       if (editingClientId) {
         await dbService.update('clients', editingClientId, clientForm);
-        toast.success('Client updated successfully');
+        toast.success('Merchant Client Account updated successfully');
       } else {
         await dbService.add('clients', {
           ...clientForm,
           status: 'ACTIVE',
-          balance: 0,
-          farmers: [],
-          totalShipments: 0
+          farmers: []
         });
-        toast.success('Client registered successfully');
+        toast.success('New Merchant Client Account successfully established');
       }
       setIsClientOpen(false);
     } catch (error: any) {
@@ -115,32 +105,34 @@ export default function Clients() {
 
   const handleClientDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this Client and all associated Farmers? This cannot be undone.')) return;
+    if (!confirm('Are you sure you want to delete this Client Account? This will purge farmer registries under their account.')) return;
     try {
       await dbService.delete('clients', id);
-      toast.success('Client deleted successfully');
-      if (selectedClient?.id === id) setSelectedClient(null);
+      toast.success('Client Account purged');
     } catch (error: any) {
       toast.error(error.message || 'Delete failed');
     }
   };
 
+  // Farmer management handlers
   const openAddFarmer = () => {
-    setEditingFarmerId(null);
     setFarmerForm({ name: '', phone: '' });
+    setEditingFarmerId(null);
     setIsFarmerOpen(true);
   };
 
   const openEditFarmer = (farmer: any) => {
+    setFarmerForm({
+      name: farmer.name || '',
+      phone: farmer.phone || ''
+    });
     setEditingFarmerId(farmer.id);
-    setFarmerForm({ name: farmer.name, phone: farmer.phone || '' });
     setIsFarmerOpen(true);
   };
 
   const handleFarmerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClient) return;
-
     setLoading(true);
     try {
       const currentFarmers = selectedClient.farmers || [];
@@ -164,6 +156,11 @@ export default function Clients() {
         farmers: updatedFarmers
       });
 
+      setSelectedClient({
+        ...selectedClient,
+        farmers: updatedFarmers
+      });
+
       setIsFarmerOpen(false);
     } catch (error: any) {
       toast.error(error.message || 'Operation failed');
@@ -177,6 +174,10 @@ export default function Clients() {
     try {
       const updatedFarmers = (selectedClient.farmers || []).filter((f: any) => f.id !== farmerId);
       await dbService.update('clients', selectedClient.id, {
+        farmers: updatedFarmers
+      });
+      setSelectedClient({
+        ...selectedClient,
         farmers: updatedFarmers
       });
       toast.success('Farmer removed successfully');
@@ -250,48 +251,48 @@ export default function Clients() {
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: i * 0.05 }}
                    onClick={() => setSelectedClient(client)}
-                   className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-premium border border-slate-100 dark:border-slate-800 group hover:border-emerald-500/50 hover:shadow-intense transition-all relative overflow-hidden flex flex-col justify-between min-h-[320px] cursor-pointer"
+                   className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-premium border border-slate-200/50 dark:border-slate-800 group hover:border-emerald-500/50 hover:shadow-[0_20px_50px_-12px_rgba(16,185,129,0.12)] hover:-translate-y-1 transition-all relative overflow-hidden flex flex-col justify-between min-h-[320px] cursor-pointer"
                  >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-all" />
                     
                     <div>
                       <div className="flex justify-between items-start mb-6">
-                         <div className="h-16 w-16 bg-slate-50 dark:bg-slate-850 rounded-3xl flex items-center justify-center font-black text-2xl text-emerald-500 border border-slate-100 dark:border-slate-800 shadow-inner">
-                            {client.name?.charAt(0)}
-                         </div>
-                         <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-4 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">{client.status}</Badge>
+                          <div className="h-16 w-16 bg-slate-50 dark:bg-slate-850 rounded-3xl flex items-center justify-center font-black text-2xl text-emerald-500 border border-slate-100 dark:border-slate-800 shadow-inner">
+                             {client.name?.charAt(0)}
+                          </div>
+                          <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-4 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">{client.status}</Badge>
                       </div>
 
                       <div className="space-y-1 mb-6">
-                         <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none text-slate-800 dark:text-white group-hover:text-emerald-500 transition-colors truncate">{client.name}</h3>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{client.phone}</p>
+                          <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none text-slate-800 dark:text-white group-hover:text-emerald-500 transition-colors truncate">{client.name}</h3>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{client.phone}</p>
                       </div>
                     </div>
 
                     <div>
-                      <div className="grid grid-cols-3 gap-2 mb-6 pt-6 border-t border-slate-50 dark:border-slate-850">
-                         <div className="space-y-1">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total In</p>
-                            <p className="text-sm font-black text-emerald-500">{ledger.totalIn}</p>
-                         </div>
-                         <div className="space-y-1">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Out</p>
-                            <p className="text-sm font-black text-rose-500">{ledger.totalOut}</p>
-                         </div>
-                         <div className="space-y-1">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Balance</p>
-                            <p className="text-sm font-black text-blue-500">{ledger.remaining}</p>
-                         </div>
+                      <div className="grid grid-cols-3 gap-2 mb-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                          <div className="space-y-1">
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total In</p>
+                             <p className="text-sm font-black text-emerald-500">{ledger.totalIn}</p>
+                          </div>
+                          <div className="space-y-1">
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Out</p>
+                             <p className="text-sm font-black text-rose-500">{ledger.totalOut}</p>
+                          </div>
+                          <div className="space-y-1">
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Balance</p>
+                             <p className="text-sm font-black text-blue-500">{ledger.remaining}</p>
+                          </div>
                       </div>
 
-                      <div className="flex gap-2">
-                         <Button onClick={(e) => { e.stopPropagation(); setLedgerClient(client); }} variant="ghost" className="flex-1 h-12 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-emerald-500 hover:text-white transition-all font-black uppercase text-[9px] tracking-widest gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                         <Button onClick={() => setLedgerClient(client)} variant="ghost" className="flex-1 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-all font-black uppercase text-[9px] tracking-widest gap-2">
                             <Receipt size={14} /> View Ledger
                          </Button>
-                         <Button onClick={(e) => openEditClient(client, e)} variant="ghost" className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-850 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all">
+                         <Button onClick={(e) => openEditClient(client, e)} variant="ghost" className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-blue-500 hover:border-blue-500 hover:text-white transition-all">
                             <Pencil size={14} />
                          </Button>
-                         <Button onClick={(e) => handleClientDelete(client.id, e)} variant="ghost" className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-850 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
+                         <Button onClick={(e) => handleClientDelete(client.id, e)} variant="ghost" className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all">
                             <Trash2 size={14} />
                          </Button>
                       </div>
@@ -304,9 +305,9 @@ export default function Clients() {
 
         {/* Client Account Form Dialog */}
         <Dialog open={isClientOpen} onOpenChange={setIsClientOpen}>
-          <DialogContent className="max-w-2xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl">
-            <DialogHeader className="mb-8">
-              <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">
+          <DialogContent className="max-w-2xl sm:max-w-[580px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden space-y-6">
+            <DialogHeader className="mb-2">
+              <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
                 {editingClientId ? 'Edit Client Account' : 'New Client Account'}
               </DialogTitle>
             </DialogHeader>
@@ -314,28 +315,28 @@ export default function Clients() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Client Name / Business Name</Label>
-                  <Input required value={clientForm.name} onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
+                  <Input required value={clientForm.name} onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contact Mobile</Label>
-                  <Input required value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
+                  <Input required value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
-                  <Input type="email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
+                  <Input type="email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">GST Identification Number</Label>
-                  <Input value={clientForm.gst} onChange={(e) => setClientForm({ ...clientForm, gst: e.target.value.toUpperCase() })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
+                  <Input value={clientForm.gst} onChange={(e) => setClientForm({ ...clientForm, gst: e.target.value.toUpperCase() })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Office / Storage Address</Label>
-                <Input required value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
+                <Input required value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
+              <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
                 {loading ? 'Saving...' : editingClientId ? 'Update Client' : 'Register Client Account'}
               </Button>
             </form>
@@ -344,12 +345,12 @@ export default function Clients() {
 
         {/* Detailed Farmers & Contacts Dialog */}
         <Dialog open={!!selectedClient} onOpenChange={(open) => !open && setSelectedClient(null)}>
-          <DialogContent className="max-w-4xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl sm:max-w-3xl w-full rounded-[2.5rem] p-8 md:p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[85vh] overflow-y-auto custom-scrollbar space-y-6">
             {selectedClient && (
               <div className="space-y-8">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
                   <div>
-                    <h2 className="text-3xl font-black uppercase italic tracking-tighter text-slate-800 dark:text-white flex items-center gap-3">
+                    <h2 className="text-3xl font-black uppercase italic tracking-tighter text-slate-850 dark:text-white flex items-center gap-3">
                       <Building className="text-emerald-500" size={28} /> {selectedClient.name}
                     </h2>
                     <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-400 uppercase mt-2">
@@ -360,7 +361,7 @@ export default function Clients() {
                       <span>Farmers: {(selectedClient.farmers || []).length} registered</span>
                     </div>
                   </div>
-                  <Button onClick={openAddFarmer} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-xl px-6 h-12 font-bold uppercase tracking-wider text-[10px] gap-2">
+                  <Button onClick={openAddFarmer} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-xl px-6 h-12 font-bold uppercase tracking-wider text-[10px] gap-2 shadow-md">
                     <Plus size={16} /> Register Farmer
                   </Button>
                 </div>
@@ -387,10 +388,10 @@ export default function Clients() {
                               <td className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">{farmer.id}</td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button onClick={() => openEditFarmer(farmer)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-blue-500 hover:text-white p-0">
+                                  <Button onClick={() => openEditFarmer(farmer)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-emerald-500 hover:text-white p-0">
                                     <Pencil size={12} />
                                   </Button>
-                                  <Button onClick={() => handleFarmerDelete(farmer.id)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-rose-500 hover:text-white p-0">
+                                  <Button onClick={() => handleFarmerDelete(farmer.id)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-rose-500 hover:text-white p-0">
                                     <Trash2 size={12} />
                                   </Button>
                                 </div>
@@ -419,9 +420,9 @@ export default function Clients() {
 
         {/* Farmer Add / Edit Dialog */}
         <Dialog open={isFarmerOpen} onOpenChange={setIsFarmerOpen}>
-          <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-2xl z-[100]">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-xl font-black uppercase tracking-tighter italic">
+          <DialogContent className="max-w-md sm:max-w-[460px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl z-[200] overflow-hidden space-y-6">
+            <DialogHeader className="mb-2">
+              <DialogTitle className="text-xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
                 {editingFarmerId ? 'Edit Farmer Registry' : 'Register New Farmer'}
               </DialogTitle>
             </DialogHeader>
@@ -433,7 +434,7 @@ export default function Clients() {
                   placeholder="e.g. Ramesh Kumar, S. Venkat Reddy"
                   value={farmerForm.name}
                   onChange={(e) => setFarmerForm({ ...farmerForm, name: e.target.value })}
-                  className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" 
+                  className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
                 />
               </div>
               <div className="space-y-2">
@@ -443,10 +444,10 @@ export default function Clients() {
                   placeholder="e.g. 9848022338"
                   value={farmerForm.phone}
                   onChange={(e) => setFarmerForm({ ...farmerForm, phone: e.target.value })}
-                  className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" 
+                  className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
                 />
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
+              <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
                 {loading ? 'Registering...' : editingFarmerId ? 'Update Farmer' : 'Add Farmer'}
               </Button>
             </form>
@@ -455,13 +456,13 @@ export default function Clients() {
 
         {/* Ledger Transaction Dialog */}
         <Dialog open={!!ledgerClient} onOpenChange={(open) => !open && setLedgerClient(null)}>
-          <DialogContent className="max-w-3xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl sm:max-w-3xl w-full rounded-[2.5rem] p-8 md:p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[80vh] overflow-y-auto custom-scrollbar space-y-6">
             {ledgerClient && (() => {
               const ledger = getClientLedger(ledgerClient.name);
               return (
                 <div className="space-y-8">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">{ledgerClient.name} — Inventory Ledger</DialogTitle>
+                    <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">{ledgerClient.name} — Inventory Ledger</DialogTitle>
                   </DialogHeader>
                   
                   {/* Summary Cards */}
@@ -489,7 +490,7 @@ export default function Clients() {
                       <ArrowDownCircle size={14} className="text-emerald-500" /> Incoming Storage Lots ({ledger.incoming.length})
                     </h4>
                     {ledger.incoming.length > 0 ? (
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                         {ledger.incoming.map((s: any) => (
                           <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-4">
@@ -512,7 +513,7 @@ export default function Clients() {
                       <ArrowUpCircle size={14} className="text-rose-500" /> Outward Dispatch Lots ({ledger.outgoing.length})
                     </h4>
                     {ledger.outgoing.length > 0 ? (
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                         {ledger.outgoing.map((s: any) => (
                           <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-4">
