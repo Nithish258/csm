@@ -81,8 +81,8 @@ export default function Incoming() {
     e.preventDefault();
     if (!tenant) return;
 
-    if (!formData.clientId || !formData.farmerId || !formData.commodityId || !formData.varietyId || !formData.locationId) {
-      toast.error('Please complete all selection fields before saving.');
+    if (!formData.clientId || !formData.commodityId || !formData.varietyId || !formData.locationId) {
+      toast.error('Please complete all required selection fields before saving.');
       return;
     }
 
@@ -237,15 +237,14 @@ export default function Incoming() {
 
                     {/* Farmer Selection */}
                     <div className="space-y-2">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Farmer (Under Selected Merchant)</Label>
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Farmer (Under Selected Merchant) - Optional</Label>
                        <select 
-                         required
                          disabled={!formData.clientId}
                          value={formData.farmerId}
                          onChange={(e) => setFormData({ ...formData, farmerId: e.target.value })}
                          className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350 disabled:opacity-50"
                        >
-                          <option value="">Select Linked Farmer</option>
+                          <option value="">No Farmer (Direct to Client)</option>
                           {farmersList.map((f: any) => <option key={f.id} value={f.id}>{f.name}</option>)}
                        </select>
                     </div>
