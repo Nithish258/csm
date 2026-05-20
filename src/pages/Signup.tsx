@@ -7,17 +7,36 @@ import { auth, db } from '../lib/firebase';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { Building2, User, Mail, Phone, Lock, Snowflake, ArrowRight, ShieldCheck } from 'lucide-react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { Building2, User, Mail, Phone, Lock, Snowflake, ArrowRight, ShieldCheck, Eye, EyeOff, Globe, Box, Layers, Thermometer } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 export default function Signup() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     orgName: '', ownerName: '', email: '', password: '', phone: '',
   });
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springCfg = { damping: 25, stiffness: 100 };
+  const parallaxX = useSpring(useTransform(mouseX, [0, 1], [-12, 12]), springCfg);
+  const parallaxY = useSpring(useTransform(mouseY, [0, 1], [-8, 8]), springCfg);
+  const tiltX = useSpring(useTransform(mouseY, [0, 1], [2, -2]), springCfg);
+  const tiltY = useSpring(useTransform(mouseX, [0, 1], [-2, 2]), springCfg);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    mouseX.set(e.clientX / window.innerWidth);
+    mouseY.set(e.clientY / window.innerHeight);
+  };
+
+  const toggleLanguage = () => {
+    const langs = ['en', 'te', 'hi'];
+    i18n.changeLanguage(langs[(langs.indexOf(i18n.language) + 1) % langs.length]);
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,58 +74,102 @@ export default function Signup() {
     } finally { setLoading(false); }
   };
 
-  const inputClass = "w-full h-11 bg-white/[0.04] border border-white/[0.08] rounded-xl pl-11 pr-4 text-sm text-white font-medium placeholder:text-slate-700 outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 transition-all";
+  const particles = React.useMemo(() => Array.from({ length: 30 }).map((_, i) => ({
+    id: i, size: Math.random() * 3 + 1, x: Math.random() * 100, y: Math.random() * 100,
+    duration: Math.random() * 20 + 12, delay: Math.random() * -15,
+  })), []);
+
+  const inputClass = "w-full h-11 bg-white/[0.04] border border-white/[0.08] rounded-xl pl-11 pr-4 text-sm text-white font-medium placeholder:text-slate-700 outline-none focus:border-emerald-500/50 focus:bg-white/[0.06] focus:ring-2 focus:ring-emerald-500/10 transition-all";
 
   return (
-    <div className="h-screen w-screen flex bg-[#020617] overflow-hidden font-sans selection:bg-emerald-500/30">
-      {/* Left Brand Panel */}
-      <div className="hidden lg:flex lg:w-5/12 relative items-center justify-center border-r border-white/5 overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b12_1px,transparent_1px),linear-gradient(to_bottom,#1e293b12_1px,transparent_1px)] bg-[size:3rem_3rem]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-gradient-radial from-emerald-500/[0.06] via-transparent to-transparent rounded-full blur-[100px]" />
-        </div>
+    <div className="h-screen w-screen flex bg-[#020617] overflow-hidden font-sans selection:bg-emerald-500/30" onMouseMove={handleMouseMove}>
+      {/* Background layers */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_50%,#000_30%,transparent_100%)] opacity-50" />
+        <motion.div animate={{ scale: [1, 1.3, 1], x: ['0%', '6%', '0%'] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full blur-[180px] bg-emerald-500/[0.07]" />
+        <motion.div animate={{ scale: [1.2, 1, 1.2], y: ['0%', '6%', '0%'] }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -bottom-[15%] -right-[5%] w-[45%] h-[45%] rounded-full blur-[180px] bg-blue-500/[0.05]" />
+        {particles.map((p) => (
+          <motion.div key={p.id} className="absolute rounded-full bg-emerald-400/30"
+            style={{ width: p.size, height: p.size, left: `${p.x}%`, top: `${p.y}%` }}
+            animate={{ y: [0, -80, 0], opacity: [0.1, 0.5, 0.1] }}
+            transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }} />
+        ))}
+      </div>
 
+      {/* Language Switcher */}
+      <button onClick={toggleLanguage}
+        className="absolute top-5 right-6 z-50 flex items-center gap-2 h-9 px-4 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-emerald-500/40 text-white/70 hover:text-white font-black text-[10px] uppercase tracking-widest transition-all backdrop-blur-sm"
+      >
+        <Globe size={12} className="text-emerald-400" /> {i18n.language.toUpperCase()}
+      </button>
+
+      {/* Left Brand Panel */}
+      <div className="hidden lg:flex lg:w-[48%] relative items-center justify-center z-10 border-r border-white/[0.04]">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
-          className="relative z-10 px-12 space-y-8 max-w-lg"
+          style={{ x: parallaxX, y: parallaxY }}
+          className="relative z-10 px-14 space-y-8 max-w-lg"
         >
           <div className="flex items-center gap-3">
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
-              className="h-12 w-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/20"
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
+              className="h-14 w-14 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/20"
             >
-              <Snowflake className="h-7 w-7 text-white" />
+              <Snowflake className="h-8 w-8 text-white" />
             </motion.div>
-            <h1 className="text-xl font-black text-white tracking-tighter uppercase italic">ColdChain <span className="text-emerald-400">OS</span></h1>
+            <div>
+              <h1 className="text-xl font-black text-white tracking-tighter uppercase italic">ColdChain <span className="text-emerald-400">OS</span></h1>
+              <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-600">Enterprise Platform v4.2</p>
+            </div>
           </div>
 
           <h2 className="text-4xl font-black text-white tracking-tight leading-[1] uppercase italic">
             {t('auth.brandSetup', 'Set up your')}<br/>
-            <span className="text-emerald-400">{t('auth.brandWorkspace', 'warehouse workspace.')}</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
+              {t('auth.brandWorkspace', 'warehouse workspace.')}
+            </span>
           </h2>
 
-          <p className="text-slate-500 text-xs font-medium leading-relaxed">
+          <p className="text-slate-500 text-sm font-medium leading-relaxed">
             {t('auth.brandSetupDesc', 'Create your cold storage workspace, register merchants, and start managing inventory in minutes.')}
           </p>
 
-          {/* Animated bars */}
-          <div className="flex gap-2 pt-2">
-            {[...Array(6)].map((_, i) => (
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { icon: Thermometer, val: '-18°C', label: t('auth.statTemp', 'Temp Control'), color: 'text-cyan-400' },
+              { icon: Box, val: '2,847', label: t('auth.statStorage', 'Active Lots'), color: 'text-emerald-400' },
+              { icon: Layers, val: '12', label: t('auth.statChambers', 'Chambers'), color: 'text-blue-400' },
+            ].map((s, i) => (
+              <div key={i} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 space-y-1.5">
+                <s.icon size={16} className={s.color} />
+                <p className="text-base font-black text-white italic tracking-tighter">{s.val}</p>
+                <p className="text-[7px] font-black uppercase tracking-[0.15em] text-slate-600">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Bar chart */}
+          <div className="flex items-end gap-1.5">
+            {[24, 38, 30, 48, 35, 52, 28, 44, 32, 46].map((h, i) => (
               <motion.div key={i}
-                animate={{ height: [16 + i * 5, 32 + i * 4, 16 + i * 5] }}
-                transition={{ duration: 2.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.2 }}
-                className="w-6 rounded-t bg-gradient-to-t from-emerald-500/20 to-emerald-500/5 border border-emerald-500/10"
-              />
+                animate={{ height: [h * 0.7, h, h * 0.7] }}
+                transition={{ duration: 3 + i * 0.25, repeat: Infinity, ease: 'easeInOut', delay: i * 0.12 }}
+                className="w-3 rounded-t-sm bg-gradient-to-t from-emerald-500/25 to-emerald-500/5 border border-emerald-500/10"
+                style={{ height: h }} />
             ))}
           </div>
         </motion.div>
       </div>
 
       {/* Right Form Panel */}
-      <div className="w-full lg:w-7/12 flex items-center justify-center px-6 md:px-12 lg:px-16 relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-500/[0.03] rounded-full blur-[100px] pointer-events-none" />
-
+      <div className="w-full lg:w-[52%] flex items-center justify-center px-6 md:px-10 lg:px-14 z-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }} className="w-full max-w-[520px] z-10 space-y-5"
+          transition={{ duration: 0.5 }}
+          style={{ rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200 }}
+          className="w-full max-w-[480px] space-y-5"
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-2 lg:hidden">
@@ -121,38 +184,41 @@ export default function Signup() {
             <p className="text-slate-600 font-bold text-[10px] uppercase tracking-widest mt-0.5">{t('auth.createWorkspace')}</p>
           </div>
 
-          {/* Form card */}
-          <div className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 lg:p-7 shadow-2xl">
-            <form onSubmit={handleSignup} className="space-y-4">
+          {/* Glass form card */}
+          <div className="relative bg-white/[0.025] backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-6 lg:p-7 shadow-2xl shadow-black/20">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.03] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent pointer-events-none opacity-40" />
+
+            <form onSubmit={handleSignup} className="space-y-4 relative">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.orgLabel')}</label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                  <div className="relative group">
+                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
                     <input placeholder="Skyline Cold Storage" className={inputClass}
                       value={formData.orgName} onChange={(e) => setFormData({ ...formData, orgName: e.target.value })} required />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.ownerLabel')}</label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                  <div className="relative group">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
                     <input placeholder="Nithish Reddy" className={inputClass}
                       value={formData.ownerName} onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })} required />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.emailLabel')}</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                  <div className="relative group">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
                     <input type="email" placeholder="admin@skyline.os" className={inputClass}
                       value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.phoneLabel')}</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                  <div className="relative group">
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
                     <input type="tel" placeholder="+91 99999 99999" className={inputClass}
                       value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required />
                   </div>
@@ -161,15 +227,19 @@ export default function Signup() {
 
               <div className="space-y-1">
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('auth.passwordLabel')}</label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
-                  <input type="password" placeholder={t('auth.passwordPlaceholder')} className={inputClass}
+                <div className="relative group">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
+                  <input type={showPassword ? 'text' : 'password'} placeholder={t('auth.passwordPlaceholder')} className={`${inputClass} !pr-12`}
                     value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-emerald-400 transition-colors z-10">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
               <Button type="submit" disabled={loading}
-                className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/10 active:scale-[0.98] transition-all"
+                className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/15 active:scale-[0.98] transition-all"
               >
                 {loading ? t('common.loading') : (
                   <span className="flex items-center gap-2">{t('auth.createWorkspace')} <ArrowRight className="h-4 w-4" /></span>
@@ -179,7 +249,7 @@ export default function Signup() {
           </div>
 
           {/* Footer */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 pt-1">
             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
               {t('auth.backToLogin')}{' '}
               <Link to="/login" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-4 transition-colors">

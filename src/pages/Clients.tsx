@@ -86,14 +86,14 @@ export default function Clients() {
     try {
       if (editingClientId) {
         await dbService.update('clients', editingClientId, clientForm);
-        toast.success('Merchant Client Account updated successfully');
+        toast.success(t('clients.updateClient'));
       } else {
         await dbService.add('clients', {
           ...clientForm,
           status: 'ACTIVE',
           farmers: []
         });
-        toast.success('New Merchant Client Account successfully established');
+        toast.success(t('clients.registerClient'));
       }
       setIsClientOpen(false);
     } catch (error: any) {
@@ -142,14 +142,14 @@ export default function Clients() {
         updatedFarmers = currentFarmers.map((f: any) => 
           f.id === editingFarmerId ? { ...f, ...farmerForm } : f
         );
-        toast.success('Farmer updated');
+        toast.success(t('clients.updateFarmer'));
       } else {
         const newFarmer = {
           id: `farm-${Date.now()}`,
           ...farmerForm
         };
         updatedFarmers = [...currentFarmers, newFarmer];
-        toast.success('Farmer added under Client');
+        toast.success(t('clients.addFarmer'));
       }
 
       await dbService.update('clients', selectedClient.id, {
@@ -180,7 +180,7 @@ export default function Clients() {
         ...selectedClient,
         farmers: updatedFarmers
       });
-      toast.success('Farmer removed successfully');
+      toast.success(t('common.delete'));
     } catch (error: any) {
       toast.error(error.message || 'Delete failed');
     }
@@ -212,16 +212,16 @@ export default function Clients() {
                 <Users2 className="h-6 w-6 text-white" />
               </div>
               <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight uppercase italic">
-                Clients & <span className="text-emerald-500">Farmers</span>
+                {t('clients.title')} & <span className="text-emerald-500">{t('clients.farmers')}</span>
               </h2>
             </div>
             <p className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-xs">
-              Manage physical register accounts of merchants/clients and their nested local farmers.
+              {t('clients.subtitle')}
             </p>
           </div>
 
           <Button onClick={openCreateClient} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-2xl px-8 h-14 font-bold uppercase tracking-wider text-xs shadow-xl transition-all hover:scale-[1.02] active:scale-95">
-            <Plus className="h-5 w-5 mr-3" /> New Client Account
+            <Plus className="h-5 w-5 mr-3" /> {t('clients.addNew')}
           </Button>
         </div>
 
@@ -233,7 +233,7 @@ export default function Clients() {
                 type="text" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="SEARCH CLIENTS BY ACCOUNT NAME OR PHONE NUMBER..."
+                placeholder={t('clients.searchPlaceholder')}
                 className="w-full h-12 bg-slate-50 dark:bg-slate-950 border-none rounded-xl pl-12 text-xs font-bold uppercase tracking-wider outline-none text-slate-900 dark:text-white placeholder:text-slate-500" 
               />
            </div>
@@ -272,22 +272,22 @@ export default function Clients() {
                     <div>
                       <div className="grid grid-cols-3 gap-2 mb-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                           <div className="space-y-1">
-                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total In</p>
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.totalIn')}</p>
                              <p className="text-sm font-black text-emerald-500">{ledger.totalIn}</p>
                           </div>
                           <div className="space-y-1">
-                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Out</p>
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.totalOut')}</p>
                              <p className="text-sm font-black text-rose-500">{ledger.totalOut}</p>
                           </div>
                           <div className="space-y-1">
-                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Balance</p>
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.balance')}</p>
                              <p className="text-sm font-black text-blue-500">{ledger.remaining}</p>
                           </div>
                       </div>
 
                       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                          <Button onClick={() => setLedgerClient(client)} variant="ghost" className="flex-1 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-all font-black uppercase text-[9px] tracking-widest gap-2">
-                            <Receipt size={14} /> View Ledger
+                            <Receipt size={14} /> {t('clients.viewLedger')}
                          </Button>
                          <Button onClick={(e) => openEditClient(client, e)} variant="ghost" className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-blue-500 hover:border-blue-500 hover:text-white transition-all">
                             <Pencil size={14} />
@@ -308,36 +308,36 @@ export default function Clients() {
           <DialogContent className="max-w-2xl sm:max-w-[580px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden space-y-6">
             <DialogHeader className="mb-2">
               <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
-                {editingClientId ? 'Edit Client Account' : 'New Client Account'}
+                {editingClientId ? t('clients.editClient') : t('clients.newClient')}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleClientSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Client Name / Business Name</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.clientName')}</Label>
                   <Input required value={clientForm.name} onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contact Mobile</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.contactMobile')}</Label>
                   <Input required value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.emailAddress')}</Label>
                   <Input type="email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">GST Identification Number</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.gstNumber')}</Label>
                   <Input value={clientForm.gst} onChange={(e) => setClientForm({ ...clientForm, gst: e.target.value.toUpperCase() })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Office / Storage Address</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.officeAddress')}</Label>
                 <Input required value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
               </div>
               <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
-                {loading ? 'Saving...' : editingClientId ? 'Update Client' : 'Register Client Account'}
+                {loading ? t('common.loading') : editingClientId ? t('clients.updateClient') : t('clients.registerClient')}
               </Button>
             </form>
           </DialogContent>
@@ -358,25 +358,25 @@ export default function Clients() {
                       <span>•</span>
                       <span>Phone: {selectedClient.phone}</span>
                       <span>•</span>
-                      <span>Farmers: {(selectedClient.farmers || []).length} registered</span>
+                      <span>{t('clients.farmers')}: {(selectedClient.farmers || []).length}</span>
                     </div>
                   </div>
                   <Button onClick={openAddFarmer} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-xl px-6 h-12 font-bold uppercase tracking-wider text-[10px] gap-2 shadow-md">
-                    <Plus size={16} /> Register Farmer
+                    <Plus size={16} /> {t('clients.registerFarmer')}
                   </Button>
                 </div>
 
                 {/* Farmers Sub-management Section */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Associated Farmers</h3>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">{t('clients.associatedFarmers')}</h3>
                   <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-850 text-slate-500 border-b border-slate-100 dark:border-slate-800">
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Farmer Name</th>
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Mobile Number</th>
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Farmer Code</th>
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-right">Actions</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">{t('clients.farmerName')}</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">{t('clients.mobileNumber')}</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">{t('clients.farmerCode')}</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-right">{t('common.actions')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -400,7 +400,7 @@ export default function Clients() {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={4} className="px-6 py-8 text-center text-xs text-slate-400 italic">No farmers currently linked to this merchant/client. Add farmer registries to begin inward operations.</td>
+                            <td colSpan={4} className="px-6 py-8 text-center text-xs text-slate-400 italic">{t('clients.noFarmers')}</td>
                           </tr>
                         )}
                       </tbody>
@@ -410,7 +410,7 @@ export default function Clients() {
 
                 <div className="flex justify-end pt-4">
                   <Button onClick={() => setSelectedClient(null)} variant="outline" className="h-12 px-6 rounded-xl font-bold uppercase tracking-widest text-[10px]">
-                    Close Registry
+                    {t('clients.closeRegistry')}
                   </Button>
                 </div>
               </div>
@@ -423,12 +423,12 @@ export default function Clients() {
           <DialogContent className="max-w-md sm:max-w-[460px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl z-[200] overflow-hidden space-y-6">
             <DialogHeader className="mb-2">
               <DialogTitle className="text-xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
-                {editingFarmerId ? 'Edit Farmer Registry' : 'Register New Farmer'}
+                {editingFarmerId ? t('clients.editFarmer') : t('clients.newFarmer')}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleFarmerSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Farmer Name</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.farmerName')}</Label>
                 <Input 
                   required 
                   placeholder="e.g. Ramesh Kumar, S. Venkat Reddy"
@@ -438,7 +438,7 @@ export default function Clients() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.mobileNumber')}</Label>
                 <Input 
                   required 
                   placeholder="e.g. 9848022338"
@@ -448,7 +448,7 @@ export default function Clients() {
                 />
               </div>
               <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
-                {loading ? 'Registering...' : editingFarmerId ? 'Update Farmer' : 'Add Farmer'}
+                {loading ? t('common.loading') : editingFarmerId ? t('clients.updateFarmer') : t('clients.addFarmer')}
               </Button>
             </form>
           </DialogContent>
@@ -462,23 +462,23 @@ export default function Clients() {
               return (
                 <div className="space-y-8">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">{ledgerClient.name} — Inventory Ledger</DialogTitle>
+                    <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">{ledgerClient.name} — {t('clients.inventoryLedger')}</DialogTitle>
                   </DialogHeader>
                   
                   {/* Summary Cards */}
                   <div className="grid grid-cols-3 gap-4">
                     <div className="p-5 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl text-center border border-emerald-100 dark:border-emerald-900/30">
-                      <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest mb-1">Total In</p>
+                      <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest mb-1">{t('clients.totalIn')}</p>
                       <p className="text-2xl font-black text-emerald-600 italic">{ledger.totalIn}</p>
                       <p className="text-[8px] font-bold text-emerald-500 uppercase">Bags</p>
                     </div>
                     <div className="p-5 bg-rose-50 dark:bg-rose-950/30 rounded-2xl text-center border border-rose-100 dark:border-rose-900/30">
-                      <p className="text-[9px] font-black uppercase text-rose-600 tracking-widest mb-1">Total Out</p>
+                      <p className="text-[9px] font-black uppercase text-rose-600 tracking-widest mb-1">{t('clients.totalOut')}</p>
                       <p className="text-2xl font-black text-rose-600 italic">{ledger.totalOut}</p>
                       <p className="text-[8px] font-bold text-rose-500 uppercase">Bags</p>
                     </div>
                     <div className="p-5 bg-blue-50 dark:bg-blue-950/30 rounded-2xl text-center border border-blue-100 dark:border-blue-900/30">
-                      <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mb-1">Stock Balance</p>
+                      <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mb-1">{t('clients.stockBalance')}</p>
                       <p className="text-2xl font-black text-blue-600 italic">{ledger.remaining}</p>
                       <p className="text-[8px] font-bold text-blue-500 uppercase">Bags</p>
                     </div>
@@ -487,7 +487,7 @@ export default function Clients() {
                   {/* Incoming Transactions */}
                   <div>
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                      <ArrowDownCircle size={14} className="text-emerald-500" /> Incoming Storage Lots ({ledger.incoming.length})
+                      <ArrowDownCircle size={14} className="text-emerald-500" /> {t('clients.incomingLots')} ({ledger.incoming.length})
                     </h4>
                     {ledger.incoming.length > 0 ? (
                       <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
@@ -504,13 +504,13 @@ export default function Clients() {
                           </div>
                         ))}
                       </div>
-                    ) : <p className="text-[10px] text-slate-400 italic">No incoming storage records registered.</p>}
+                    ) : <p className="text-[10px] text-slate-400 italic">{t('clients.noIncoming')}</p>}
                   </div>
 
                   {/* Outgoing Transactions */}
                   <div>
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                      <ArrowUpCircle size={14} className="text-rose-500" /> Outward Dispatch Lots ({ledger.outgoing.length})
+                      <ArrowUpCircle size={14} className="text-rose-500" /> {t('clients.outgoingLots')} ({ledger.outgoing.length})
                     </h4>
                     {ledger.outgoing.length > 0 ? (
                       <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
@@ -527,7 +527,7 @@ export default function Clients() {
                           </div>
                         ))}
                       </div>
-                    ) : <p className="text-[10px] text-slate-400 italic">No outgoing dispatch records registered.</p>}
+                    ) : <p className="text-[10px] text-slate-400 italic">{t('clients.noOutgoing')}</p>}
                   </div>
                 </div>
               );
