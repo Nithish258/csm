@@ -18,7 +18,9 @@ import {
   Calendar,
   AlertTriangle,
   Receipt,
-  Scale
+  Scale,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -382,6 +384,7 @@ export default function Outgoing() {
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Bags Dispatched</th>
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Billing Charges</th>
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Payment Status</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-center">Actions</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -402,11 +405,18 @@ export default function Outgoing() {
                                  'bg-rose-500/10 text-rose-500'
                                }`}>{d.paymentStatus || 'UNPAID'}</Badge>
                             </td>
+                            <td className="px-6 py-4">
+                               <div className="flex items-center justify-center gap-2">
+                                  <button onClick={async () => { if (!confirm('Delete this dispatch record?')) return; try { await dbService.delete('outgoing_shipments', d.id); toast.success('Dispatch deleted'); } catch { toast.error('Delete failed'); } }} className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-lg text-slate-400 transition-colors">
+                                     <Trash2 size={14} />
+                                  </button>
+                               </div>
+                            </td>
                          </tr>
                       ))
                     ) : (
                        <tr>
-                          <td colSpan={8} className="px-6 py-12 text-center text-xs text-slate-400 italic">No release dispatches authorized yet.</td>
+                          <td colSpan={9} className="px-6 py-12 text-center text-xs text-slate-400 italic">No release dispatches authorized yet.</td>
                        </tr>
                     )}
                  </tbody>

@@ -18,7 +18,9 @@ import {
   Layers,
   FileText,
   User,
-  Scale
+  Scale,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -36,6 +38,7 @@ export default function Incoming() {
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -77,6 +80,66 @@ export default function Incoming() {
 
 
 
+  const openCreate = () => {
+    setFormData({
+      inwardDate: new Date().toISOString().split('T')[0],
+      inBillNumber: '',
+      clientId: '',
+      clientName: '',
+      farmerId: '',
+      farmerName: '',
+      commodityId: '',
+      commodityName: '',
+      varietyId: '',
+      varietyName: '',
+      locationId: '',
+      mark: '',
+      quantity: 0,
+      weight: 0,
+      vehicleNumber: '',
+      driverNumber: '',
+      notes: '',
+      subSlot: ''
+    });
+    setEditingId(null);
+    setIsDialogOpen(true);
+  };
+
+  const openEdit = (s: any) => {
+    setFormData({
+      inwardDate: s.inwardDate || new Date().toISOString().split('T')[0],
+      inBillNumber: s.inBillNumber || '',
+      clientId: s.clientId || '',
+      clientName: s.clientName || '',
+      farmerId: s.farmerId || '',
+      farmerName: s.farmerName || '',
+      commodityId: s.commodityId || '',
+      commodityName: s.commodityName || '',
+      varietyId: s.varietyId || '',
+      varietyName: s.varietyName || '',
+      locationId: s.locationId || '',
+      mark: s.mark || '',
+      quantity: s.quantity || 0,
+      weight: s.weight || 0,
+      vehicleNumber: s.vehicleNumber || '',
+      driverNumber: s.driverNumber || '',
+      notes: s.notes || '',
+      subSlot: s.subSlot || ''
+    });
+    setEditingId(s.id);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this inward entry? This action is irreversible.')) return;
+    try {
+      await dbService.delete('incoming_shipments', id);
+      toast.success('Inward entry deleted');
+    } catch (error: any) {
+      toast.error(error.message || 'Delete failed');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant) return;
@@ -112,10 +175,15 @@ export default function Incoming() {
         tenantId: tenant.id
       };
 
-      await shipmentService.createInward(payload);
-      
-      toast.success(t('incoming.success', 'Inward Record Committed Successfully'));
+      if (editingId) {
+        await dbService.update('incoming_shipments', editingId, payload);
+        toast.success('Inward entry updated successfully');
+      } else {
+        await shipmentService.createInward(payload);
+        toast.success(t('incoming.success', 'Inward Record Committed Successfully'));
+      }
       setIsDialogOpen(false);
+      setEditingId(null);
       setFormData({
         inwardDate: new Date().toISOString().split('T')[0],
         inBillNumber: '',
@@ -172,7 +240,7 @@ export default function Incoming() {
               <p className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-xs">{t('incoming.subtitle', 'Register physical inward stocks and assign them to cold rooms.')}</p>
            </div>
 
-           <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-2xl px-8 h-14 font-bold uppercase tracking-wider text-xs shadow-xl transition-all hover:scale-[1.02] active:scale-95">
+           <Button onClick={openCreate} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-2xl px-8 h-14 font-bold uppercase tracking-wider text-xs shadow-xl transition-all hover:scale-[1.02] active:scale-95">
               <Plus className="h-5 w-5 mr-3" /> New Inward Entry
            </Button>
         </div>
@@ -401,7 +469,7 @@ export default function Incoming() {
                  </div>
 
                  <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
-                    {loading ? 'Processing Transaction...' : 'Commit Inward Entry'}
+                    {loading ? 'Processing...' : (editingId ? 'Save Changes' : 'Commit Inward Entry')}
                  </Button>
               </form>
            </DialogContent>
@@ -438,6 +506,7 @@ export default function Incoming() {
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Bags (Custody)</th>
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Mark</th>
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Storage Location</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-center">Actions</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -454,11 +523,21 @@ export default function Incoming() {
                             </td>
                             <td className="px-6 py-4 text-xs font-black text-slate-800 dark:text-white uppercase">{s.mark || 'N/A'}</td>
                             <td className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">{s.chamber} › {s.floor} › {s.block}</td>
+                            <td className="px-6 py-4">
+                               <div className="flex items-center justify-center gap-2">
+                                  <button onClick={() => openEdit(s)} className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-blue-500 hover:text-white rounded-lg text-slate-400 transition-colors">
+                                     <Pencil size={14} />
+                                  </button>
+                                  <button onClick={() => handleDelete(s.id)} className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-lg text-slate-400 transition-colors">
+                                     <Trash2 size={14} />
+                                  </button>
+                               </div>
+                            </td>
                          </tr>
                       ))
                     ) : (
                        <tr>
-                          <td colSpan={8} className="px-6 py-12 text-center text-xs text-slate-400 italic">No inward storage registries logged matching search filter.</td>
+                          <td colSpan={9} className="px-6 py-12 text-center text-xs text-slate-400 italic">No inward storage registries logged matching search filter.</td>
                        </tr>
                     )}
                  </tbody>
