@@ -163,11 +163,11 @@ export default function WarehouseMap() {
                         <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/10">
                            <div className="space-y-1">
                               <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Occupied</p>
-                              <p className="text-2xl font-black italic tracking-tighter text-emerald-400">{selectedLocation.occupied || 0} <span className="text-[10px] text-white/40 not-italic">BAGS</span></p>
+                              <p className="text-2xl font-black italic tracking-tighter text-emerald-400">{selectedLocation.occupied || 0}</p>
                            </div>
                            <div className="space-y-1">
                               <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Capacity</p>
-                              <p className="text-2xl font-black italic tracking-tighter text-white">{selectedLocation.capacity || 1000} <span className="text-[10px] text-white/40 not-italic">BAGS</span></p>
+                              <p className="text-2xl font-black italic tracking-tighter text-white">{selectedLocation.capacity || 1000}</p>
                            </div>
                         </div>
 

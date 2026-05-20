@@ -147,7 +147,7 @@ export default function Locations() {
            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium flex items-center justify-between">
               <div>
                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Global Storage Capacity</p>
-                 <h4 className="text-3xl font-black italic tracking-tighter text-slate-850 dark:text-white">{totalCapacity} <span className="text-xs font-bold text-slate-400 uppercase not-italic">Bags</span></h4>
+                 <h4 className="text-3xl font-black italic tracking-tighter text-slate-850 dark:text-white">{totalCapacity}</h4>
               </div>
               <div className="h-12 w-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400">
                  <Boxes size={22} />
@@ -157,7 +157,7 @@ export default function Locations() {
            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium flex items-center justify-between">
               <div>
                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Stock in Storage</p>
-                 <h4 className="text-3xl font-black italic tracking-tighter text-emerald-500">{totalOccupied} <span className="text-xs font-bold text-slate-400 uppercase not-italic">Bags</span></h4>
+                 <h4 className="text-3xl font-black italic tracking-tighter text-emerald-500">{totalOccupied}</h4>
               </div>
               <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
                  <TrendingUp size={22} />
@@ -227,10 +227,13 @@ export default function Locations() {
                  </div>
 
                  {Object.keys(groupedData[chamberName]).map(floorName => (
-                    <div key={floorName} className="space-y-4">
-                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest pl-2">{floorName}</p>
-                       
-                       {/* Grid of Blocks */}
+                     <div key={floorName} className="space-y-6 p-6 rounded-[2.5rem] border-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50">
+                        <div className="flex items-center gap-2">
+                           <div className="h-6 w-6 bg-slate-200 dark:bg-slate-800 rounded-lg flex items-center justify-center text-[8px] font-black uppercase text-slate-500">FL</div>
+                           <p className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 tracking-widest">{floorName}</p>
+                        </div>
+                        
+                        {/* Grid of Blocks */}
                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                           {groupedData[chamberName][floorName].map(loc => {
                              const pct = Math.min(100, Math.round(((loc.occupied || 0) / (loc.capacity || 500)) * 100));
@@ -258,13 +261,13 @@ export default function Locations() {
                                         </button>
                                      </div>
                                      <h4 className="text-lg font-black uppercase italic tracking-tighter text-slate-850 dark:text-white">{loc.name}</h4>
-                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">CAP: {loc.capacity} BAGS</p>
+                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">CAP: {loc.capacity}</p>
                                    </div>
 
                                    <div className="space-y-2 pt-4">
                                       <div className="flex justify-between items-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
                                          <span>Occupied</span>
-                                         <span className="font-black italic">{loc.occupied || 0} bags</span>
+                                         <span className="font-black italic">{loc.occupied || 0}</span>
                                       </div>
                                       <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                          <div 
@@ -277,6 +280,18 @@ export default function Locations() {
                                          />
                                       </div>
                                    </div>
+
+                                    {/* Mock Sub-Slots for visual hierarchy */}
+                                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Sub-Slots / Sub-Blocks</p>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {[1, 2, 3, 4].map(slot => (
+                                                <div key={slot} className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center text-[8px] font-bold text-slate-400">
+                                                    S{slot}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </motion.div>
                              );
                           })}

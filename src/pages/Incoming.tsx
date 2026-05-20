@@ -75,15 +75,7 @@ export default function Incoming() {
 
   const selectedLoc = locations.find(l => l.id === formData.locationId);
 
-  // Generate Inward Bill Number helper
-  useEffect(() => {
-    if (isDialogOpen && !formData.inBillNumber) {
-      setFormData(prev => ({
-        ...prev,
-        inBillNumber: `INB-${Date.now().toString().slice(-6)}`
-      }));
-    }
-  }, [isDialogOpen]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,7 +180,7 @@ export default function Incoming() {
 
         {/* Dialog Form */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-           <DialogContent className="max-w-4xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[90vh] overflow-y-auto">
+           <DialogContent className="max-w-6xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader className="mb-6">
                  <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">Create Inward Entry</DialogTitle>
               </DialogHeader>
@@ -209,9 +201,10 @@ export default function Incoming() {
                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">In Bill Number</Label>
                        <Input 
                          required 
-                         readOnly
+                         placeholder="ENTER BILL #"
                          value={formData.inBillNumber}
-                         className="h-14 bg-slate-100 dark:bg-slate-800 border-none rounded-2xl px-6 text-xs font-black italic uppercase tracking-wider text-slate-500" 
+                         onChange={(e) => setFormData({ ...formData, inBillNumber: e.target.value.toUpperCase() })}
+                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase tracking-wider" 
                        />
                     </div>
                     <div className="space-y-2">
