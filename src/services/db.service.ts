@@ -71,7 +71,7 @@ export const dbService = {
   /**
    * Get a single document by ID
    */
-  async get(path: string, id: string) {
+  async get(path: string, id: string): Promise<any> {
     const docRef = doc(db, path, id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {

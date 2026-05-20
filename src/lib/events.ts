@@ -1,6 +1,6 @@
 type ERPEvent = 
   | { type: 'SHIPMENT_CREATED'; payload: { shipmentId: string; type: 'INCOMING' | 'OUTGOING'; tenantId: string } }
-  | { type: 'STOCK_UPDATED'; payload: { productId: string; delta: number; tenantId: string } }
+  | { type: 'STOCK_UPDATED'; payload: { commodityId: string; varietyId: string; delta: number; tenantId: string } }
   | { type: 'PAYMENT_RECEIVED'; payload: { invoiceId: string; amount: number; tenantId: string } }
   | { type: 'OCCUPANCY_CHANGED'; payload: { locationId: string; tenantId: string } };
 

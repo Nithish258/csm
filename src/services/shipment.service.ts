@@ -12,25 +12,41 @@ export const shipmentService = {
    * Process a New Inward Entry
    */
   async createInward(data: {
+    inwardDate: string;
+    inBillNumber: string;
     clientId: string;
-    productId: string;
+    clientName: string;
+    farmerId: string;
+    farmerName: string;
+    commodityId: string;
+    commodityName: string;
+    varietyId: string;
+    varietyName: string;
     locationId: string;
+    chamber: string;
+    floor: string;
+    block: string;
+    mark: string;
     quantity: number;
+    weight: number;
     vehicleNumber: string;
-    gatePass: string;
+    driverNumber: string;
+    notes: string;
     tenantId: string;
   }) {
     try {
-      return await dbService.executeTransaction(async (transaction) => {
-        // 1. Create the Shipment Record
-        const shipmentRef = await dbService.add('incoming_shipments', {
+      let shipmentRef: any = null;
+      await dbService.executeTransaction(async (transaction) => {
+        // 1. Create the Shipment Record with remainingBags tracker
+        shipmentRef = await dbService.add('incoming_shipments', {
           ...data,
+          remainingBags: data.quantity,
           createdAt: new Date(),
           status: 'IN_STORAGE',
         });
 
         // 2. Atomically Increment Stock
-        await stockService.adjustStock(data.productId, data.quantity, data.locationId, data.tenantId);
+        await stockService.adjustStock(data.commodityId, data.varietyId, data.quantity, data.locationId, data.tenantId);
 
         // 3. Update Location Occupancy
         const locationRef = await dbService.get('locations', data.locationId);
@@ -54,9 +70,8 @@ export const shipmentService = {
           type: 'SHIPMENT_CREATED',
           payload: { shipmentId: shipmentRef.id, type: 'INCOMING', tenantId: data.tenantId }
         });
-
-        return shipmentRef;
       });
+      return shipmentRef;
     } catch (error: any) {
       toast.error(`Shipment Critical Failure: ${error.message}`);
       throw error;
@@ -67,19 +82,35 @@ export const shipmentService = {
    * Process a Dispatch Authorization
    */
   async createOutward(data: {
+    outwardDate: string;
+    inwardShipmentId: string;
     clientId: string;
-    productId: string;
+    clientName: string;
+    farmerId?: string;
+    farmerName?: string;
+    commodityId: string;
+    commodityName: string;
+    varietyId: string;
+    varietyName: string;
     locationId: string;
     quantity: number;
+    weight: number;
+    balanceBags: number;
+    totalAmount: number;
+    paidAmount: number;
+    remainingAmount: number;
+    paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
     vehicleNumber: string;
     orderId: string;
     tenantId: string;
   }) {
     try {
-      return await dbService.executeTransaction(async (transaction) => {
+      let shipmentRef: any = null;
+      await dbService.executeTransaction(async (transaction) => {
         // 1. Validate Stock Availability FIRST
         const isAvailable = await stockService.validateAvailability(
-          data.productId, 
+          data.commodityId, 
+          data.varietyId,
           data.locationId, 
           data.quantity, 
           data.tenantId
@@ -89,17 +120,34 @@ export const shipmentService = {
           throw new Error(`Negative Stock Prevention: Requested ${data.quantity} bags but insufficient inventory in block.`);
         }
 
-        // 2. Create the Dispatch Record
-        const shipmentRef = await dbService.add('outgoing_shipments', {
+        // 2. Validate Inward Shipment remaining bags
+        const inwardRef = await dbService.get('incoming_shipments', data.inwardShipmentId);
+        if (!inwardRef) {
+          throw new Error(`Invalid Inward Shipment: Selected shipment not found.`);
+        }
+        const remaining = inwardRef.remainingBags !== undefined ? inwardRef.remainingBags : inwardRef.quantity;
+        if (data.quantity > remaining) {
+          throw new Error(`Exceeded Inward Shipment Stock: Only ${remaining} bags remaining in selected inward bill.`);
+        }
+
+        // 3. Create the Dispatch Record
+        shipmentRef = await dbService.add('outgoing_shipments', {
           ...data,
           createdAt: new Date(),
           status: 'COMPLETED',
         });
 
-        // 3. Atomically Decrement Stock
-        await stockService.adjustStock(data.productId, -data.quantity, data.locationId, data.tenantId);
+        // 4. Update Inward Shipment remaining bags
+        const newRemainingBags = remaining - data.quantity;
+        await dbService.update('incoming_shipments', data.inwardShipmentId, {
+          remainingBags: newRemainingBags,
+          status: newRemainingBags === 0 ? 'DISPATCHED' : 'PARTIALLY_DISPATCHED'
+        });
 
-        // 4. Update Location Occupancy
+        // 5. Atomically Decrement Stock
+        await stockService.adjustStock(data.commodityId, data.varietyId, -data.quantity, data.locationId, data.tenantId);
+
+        // 6. Update Location Occupancy
         const locationRef = await dbService.get('locations', data.locationId);
         if (locationRef) {
           const newOccupied = (locationRef.occupied || 0) - data.quantity;
@@ -116,14 +164,13 @@ export const shipmentService = {
           });
         }
 
-        // 5. Emit System Event
+        // 7. Emit System Event
         await eventBus.emit({
           type: 'SHIPMENT_CREATED',
           payload: { shipmentId: shipmentRef.id, type: 'OUTGOING', tenantId: data.tenantId }
         });
-
-        return shipmentRef;
       });
+      return shipmentRef;
     } catch (error: any) {
       toast.error(`Dispatch Logic Violation: ${error.message}`);
       throw error;

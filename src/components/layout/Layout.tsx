@@ -61,7 +61,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { name: t('common.incoming'), href: '/incoming', icon: ArrowDownCircle },
     { name: t('common.outgoing'), href: '/outgoing', icon: ArrowUpCircle },
     { name: t('common.vehicleLogs'), href: '/vehicle-logs', icon: Truck },
-    { name: t('common.seasons'), href: '/seasons', icon: CloudSun },
     { name: t('common.invoices'), href: '/invoices', icon: Receipt },
     { name: t('common.payments'), href: '/payments', icon: CreditCard },
     { name: t('common.expenses'), href: '/expenses', icon: Wallet },

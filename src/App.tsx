@@ -24,7 +24,6 @@ import Payments from './pages/Payments';
 import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import VehicleLogs from './pages/VehicleLogs';
-import Seasons from './pages/Seasons';
 import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
 
@@ -99,7 +98,6 @@ function App() {
         <Route path="/outgoing" element={user ? <Outgoing /> : <Navigate to="/login" />} />
         <Route path="/stock" element={user ? <Stock /> : <Navigate to="/login" />} />
         <Route path="/vehicle-logs" element={user ? <VehicleLogs /> : <Navigate to="/login" />} />
-        <Route path="/seasons" element={user ? <Seasons /> : <Navigate to="/login" />} />
         <Route path="/invoices" element={user ? <Invoices /> : <Navigate to="/login" />} />
         <Route path="/payments" element={user ? <Payments /> : <Navigate to="/login" />} />
         <Route path="/expenses" element={user ? <Expenses /> : <Navigate to="/login" />} />

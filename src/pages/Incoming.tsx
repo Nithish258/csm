@@ -13,7 +13,12 @@ import {
   Search, 
   Truck, 
   ArrowDownCircle, 
-  Info
+  Info,
+  Calendar,
+  Layers,
+  FileText,
+  User,
+  Scale
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -26,42 +31,118 @@ export default function Incoming() {
   const { tenant } = useAuthStore();
   const [shipments, setShipments] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [commodities, setCommodities] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
+  // Form State
   const [formData, setFormData] = useState({
+    inwardDate: new Date().toISOString().split('T')[0],
+    inBillNumber: '',
     clientId: '',
-    productId: '',
+    clientName: '',
+    farmerId: '',
+    farmerName: '',
+    commodityId: '',
+    commodityName: '',
+    varietyId: '',
+    varietyName: '',
     locationId: '',
+    mark: '',
     quantity: 0,
+    weight: 0,
     vehicleNumber: '',
-    gatePass: '',
+    driverNumber: '',
+    notes: ''
   });
 
   useEffect(() => {
     const unsub = dbService.sync('incoming_shipments', setShipments);
     dbService.sync('clients', setClients);
-    dbService.sync('products', setProducts);
+    dbService.sync('products', setCommodities); // repurpose products as commodities in database
     dbService.sync('locations', setLocations);
     return () => unsub();
   }, []);
 
+  // Sync dependant lists
+  const selectedClientObj = clients.find(c => c.id === formData.clientId || c.name === formData.clientName);
+  const farmersList = selectedClientObj?.farmers || [];
+
+  const selectedCommodityObj = commodities.find(c => c.id === formData.commodityId || c.name === formData.commodityName);
+  const varietiesList = selectedCommodityObj?.varieties || [];
+
+  const selectedLoc = locations.find(l => l.id === formData.locationId);
+
+  // Generate Inward Bill Number helper
+  useEffect(() => {
+    if (isDialogOpen && !formData.inBillNumber) {
+      setFormData(prev => ({
+        ...prev,
+        inBillNumber: `INB-${Date.now().toString().slice(-6)}`
+      }));
+    }
+  }, [isDialogOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant) return;
-    
+
+    if (!formData.clientId || !formData.farmerId || !formData.commodityId || !formData.varietyId || !formData.locationId) {
+      toast.error('Please complete all selection fields before saving.');
+      return;
+    }
+
+    if (formData.quantity <= 0) {
+      toast.error('Bags quantity must be greater than zero.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await shipmentService.createInward({
+      // Find names for ID entries
+      const client = clients.find(c => c.id === formData.clientId);
+      const farmer = client?.farmers?.find((f: any) => f.id === formData.farmerId);
+      const commodity = commodities.find(c => c.id === formData.commodityId);
+      const variety = commodity?.varieties?.find((v: any) => v.id === formData.varietyId);
+      const loc = locations.find(l => l.id === formData.locationId);
+
+      const payload = {
         ...formData,
+        clientName: client?.name || '',
+        farmerName: farmer?.name || '',
+        commodityName: commodity?.name || '',
+        varietyName: variety?.name || '',
+        chamber: loc?.chamber || '',
+        floor: loc?.floor || '',
+        block: loc?.name || '',
         tenantId: tenant.id
-      });
+      };
+
+      await shipmentService.createInward(payload);
       
-      toast.success(t('incoming.success', 'Inward Record Created'));
+      toast.success(t('incoming.success', 'Inward Record Committed Successfully'));
       setIsDialogOpen(false);
-      setFormData({ clientId: '', productId: '', locationId: '', quantity: 0, vehicleNumber: '', gatePass: '' });
+      setFormData({
+        inwardDate: new Date().toISOString().split('T')[0],
+        inBillNumber: '',
+        clientId: '',
+        clientName: '',
+        farmerId: '',
+        farmerName: '',
+        commodityId: '',
+        commodityName: '',
+        varietyId: '',
+        varietyName: '',
+        locationId: '',
+        mark: '',
+        quantity: 0,
+        weight: 0,
+        vehicleNumber: '',
+        driverNumber: '',
+        notes: ''
+      });
     } catch (error: any) {
       await draftQueue.saveDraft('INCOMING', formData);
       toast.error(error.message || 'Failed to create entry');
@@ -70,193 +151,310 @@ export default function Incoming() {
     }
   };
 
-  const selectedLoc = locations.find(l => l.id === formData.locationId);
-
-  // Sort locations: EMPTY first, PARTIAL second, FULL last
   const sortedLocations = [...locations].sort((a, b) => {
     const order: Record<string, number> = { EMPTY: 0, PARTIAL: 1, FULL: 2 };
     return (order[a.status] || 0) - (order[b.status] || 0);
   });
 
+  const filteredShipments = shipments.filter(s => 
+    s.clientName?.toLowerCase().includes(search.toLowerCase()) ||
+    s.farmerName?.toLowerCase().includes(search.toLowerCase()) ||
+    s.commodityName?.toLowerCase().includes(search.toLowerCase()) ||
+    s.inBillNumber?.toLowerCase().includes(search.toLowerCase()) ||
+    s.mark?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <Layout>
-      <div className="space-y-12">
+      <div className="space-y-12 max-w-7xl mx-auto px-4 md:px-8">
+        {/* cinematic Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
            <div className="space-y-4">
               <div className="flex items-center gap-3">
-                 <div className="h-10 w-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <ArrowDownCircle className="h-5 w-5 text-white" />
+                 <div className="h-12 w-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <ArrowDownCircle className="h-6 w-6 text-white" />
                  </div>
-                 <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">{t('incoming.title', 'Incoming')} <span className="text-emerald-500">{t('incoming.logistics', 'Shipments')}</span></h2>
+                 <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight uppercase italic">{t('incoming.title', 'Inward Entry')} <span className="text-emerald-500">{t('incoming.logistics', 'Register')}</span></h2>
               </div>
-              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">{t('incoming.subtitle', 'Register inward stock entries and assign to storage locations.')}</p>
+              <p className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-xs">{t('incoming.subtitle', 'Register physical inward stocks and assign them to cold rooms.')}</p>
            </div>
 
-           <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-2xl px-8 h-14 font-black uppercase tracking-widest text-[10px] shadow-xl transition-all active:scale-95">
-              <Plus className="h-5 w-5 mr-3" /> {t('incoming.addNew', 'New Incoming Entry')}
+           <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-2xl px-8 h-14 font-bold uppercase tracking-wider text-xs shadow-xl transition-all hover:scale-[1.02] active:scale-95">
+              <Plus className="h-5 w-5 mr-3" /> New Inward Entry
            </Button>
         </div>
 
-        {/* Create Dialog */}
+        {/* Search */}
+        <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-premium">
+           <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input 
+                type="text" 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="SEARCH INWARD LOGS BY BILL NUMBER, CLIENT, FARMER, MARK..."
+                className="w-full h-12 bg-slate-50 dark:bg-slate-950 border-none rounded-xl pl-12 text-xs font-bold uppercase tracking-wider outline-none text-slate-900 dark:text-white placeholder:text-slate-500" 
+              />
+           </div>
+        </div>
+
+        {/* Dialog Form */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-           <DialogContent className="max-w-2xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl">
-              <DialogHeader className="mb-8">
-                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">{t('incoming.createTitle', 'Create Incoming Entry')}</DialogTitle>
+           <DialogContent className="max-w-4xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader className="mb-6">
+                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">Create Inward Entry</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-8">
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Client</Label>
+                 {/* Step 1: Logistics Metadata */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Inward Date</Label>
+                       <Input 
+                         type="date" 
+                         required 
+                         value={formData.inwardDate}
+                         onChange={(e) => setFormData({ ...formData, inwardDate: e.target.value })}
+                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">In Bill Number</Label>
+                       <Input 
+                         required 
+                         readOnly
+                         value={formData.inBillNumber}
+                         className="h-14 bg-slate-100 dark:bg-slate-800 border-none rounded-2xl px-6 text-xs font-black italic uppercase tracking-wider text-slate-500" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Bag Markings (Label)</Label>
+                       <Input 
+                         required 
+                         placeholder="e.g. G.E. / RED"
+                         value={formData.mark}
+                         onChange={(e) => setFormData({ ...formData, mark: e.target.value.toUpperCase() })}
+                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase" 
+                       />
+                    </div>
+                 </div>
+
+                 {/* Step 2: Dependant Entities selection */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Client Selection */}
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Merchant Client</Label>
                        <select 
                          required
                          value={formData.clientId}
-                         onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none"
+                         onChange={(e) => setFormData({ ...formData, clientId: e.target.value, farmerId: '' })}
+                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350"
                        >
-                          <option value="">Select Client</option>
-                          {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          <option value="">Select Merchant Client</option>
+                          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                        </select>
                     </div>
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Product</Label>
+
+                    {/* Farmer Selection */}
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Farmer (Under Selected Merchant)</Label>
                        <select 
                          required
-                         value={formData.productId}
-                         onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none"
+                         disabled={!formData.clientId}
+                         value={formData.farmerId}
+                         onChange={(e) => setFormData({ ...formData, farmerId: e.target.value })}
+                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350 disabled:opacity-50"
                        >
-                          <option value="">Select Product</option>
-                          {products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                          <option value="">Select Linked Farmer</option>
+                          {farmersList.map((f: any) => <option key={f.id} value={f.id}>{f.name}</option>)}
                        </select>
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quantity (Bags)</Label>
+                 {/* Step 3: Dependant Products Selection */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Commodity Catalog</Label>
+                       <select 
+                         required
+                         value={formData.commodityId}
+                         onChange={(e) => setFormData({ ...formData, commodityId: e.target.value, varietyId: '' })}
+                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350"
+                       >
+                          <option value="">Select Commodity</option>
+                          {commodities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                       </select>
+                    </div>
+
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Variety (Under Selected Commodity)</Label>
+                       <select 
+                         required
+                         disabled={!formData.commodityId}
+                         value={formData.varietyId}
+                         onChange={(e) => setFormData({ ...formData, varietyId: e.target.value })}
+                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350 disabled:opacity-50"
+                       >
+                          <option value="">Select Variety</option>
+                          {varietiesList.map((v: any) => <option key={v.id} value={v.id}>{v.name} (₹{v.baseRate || 0})</option>)}
+                       </select>
+                    </div>
+                 </div>
+
+                 {/* Step 4: Storage layout and quantity */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Bags Quantity</Label>
                        <Input 
                          type="number" 
                          required 
-                         value={formData.quantity}
+                         value={formData.quantity || ''}
                          onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-black text-lg px-6 italic" 
+                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl text-lg font-black italic px-6" 
                        />
                     </div>
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Assign to Location</Label>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Weight In (Quintals/KG)</Label>
+                       <Input 
+                         type="number" 
+                         required 
+                         value={formData.weight || ''}
+                         onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) || 0 })}
+                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl text-lg font-black italic px-6" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cold Room Location Slot</Label>
                        <select 
                          required
                          value={formData.locationId}
                          onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none"
+                         className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-350"
                        >
-                          <option value="">Select Block / Slot</option>
+                          <option value="">Select Target Block</option>
                           {sortedLocations.map(l => (
                             <option key={l.id} value={l.id} disabled={l.status === 'FULL'}>
-                              {l.status === 'EMPTY' ? '🟢' : l.status === 'PARTIAL' ? '🟡' : '🔴'} {l.chamber} › {l.floor} › {l.name} — {l.occupied || 0}/{l.capacity} bags ({l.status})
+                              {l.status === 'EMPTY' ? '🟢' : l.status === 'PARTIAL' ? '🟡' : '🔴'} {l.chamber} › {l.floor} › {l.name} — Free: {(l.capacity || 0) - (l.occupied || 0)} bags
                             </option>
                           ))}
                        </select>
                     </div>
                  </div>
 
-                 {/* Location Status Indicator */}
+                 {/* Realtime Block status feedback gauge */}
                  <AnimatePresence>
                     {selectedLoc && (
                        <motion.div 
                          initial={{ opacity: 0, y: 10 }}
                          animate={{ opacity: 1, y: 0 }}
-                         className="p-6 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-100 dark:border-white/5 flex items-center justify-between"
+                         className="p-6 bg-slate-50 dark:bg-slate-850 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between"
                        >
                           <div className="flex items-center gap-4">
-                             <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                             <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
                                selectedLoc.status === 'EMPTY' ? 'bg-emerald-500/10 text-emerald-500' : 
                                selectedLoc.status === 'PARTIAL' ? 'bg-amber-500/10 text-amber-500' : 
                                'bg-rose-500/10 text-rose-500'
                              }`}>
-                                <Info size={18} />
+                                <Info size={20} />
                              </div>
                              <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Target Block</p>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target Block Slot</p>
                                 <p className="text-xs font-black uppercase italic tracking-tighter">{selectedLoc.chamber} › {selectedLoc.floor} › {selectedLoc.name}</p>
                              </div>
                           </div>
                           <div className="text-right">
-                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Available</p>
-                             <p className="text-xs font-black italic tracking-tighter">{(selectedLoc.capacity || 0) - (selectedLoc.occupied || 0)} bags free</p>
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Capacity Free</p>
+                             <p className="text-xs font-black italic tracking-tighter">{(selectedLoc.capacity || 0) - (selectedLoc.occupied || 0)} bags remaining</p>
                           </div>
                        </motion.div>
                     )}
                  </AnimatePresence>
 
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle Number</Label>
+                 {/* Step 5: Vehicle logistics */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Vehicle Registration Number</Label>
                        <Input 
                          required 
-                         placeholder="TS 09 EQ 1234"
+                         placeholder="e.g. AP 39 TV 2234"
                          value={formData.vehicleNumber}
                          onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value.toUpperCase() })}
-                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-black text-sm px-6 uppercase tracking-widest" 
+                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-black text-sm px-6 uppercase tracking-wider" 
                        />
                     </div>
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gate Pass</Label>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Driver Contact Number</Label>
                        <Input 
                          required 
-                         value={formData.gatePass}
-                         onChange={(e) => setFormData({ ...formData, gatePass: e.target.value })}
-                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-black text-sm px-6 uppercase tracking-widest" 
+                         placeholder="e.g. 9866023349"
+                         value={formData.driverNumber}
+                         onChange={(e) => setFormData({ ...formData, driverNumber: e.target.value })}
+                         className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-black text-sm px-6 tracking-wider" 
                        />
                     </div>
                  </div>
 
+                 <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Audit Notes / Remarks</Label>
+                    <textarea 
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="ADD REGISTER AUDIT NOTES HERE..."
+                      className="w-full min-h-[100px] bg-slate-50 dark:bg-slate-950 border-none rounded-2xl p-6 text-xs font-bold uppercase tracking-wider outline-none text-slate-800 dark:text-white"
+                    />
+                 </div>
+
                  <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
-                    {loading ? 'Processing...' : 'Commit Incoming Entry'}
+                    {loading ? 'Processing Transaction...' : 'Commit Inward Entry'}
                  </Button>
               </form>
            </DialogContent>
         </Dialog>
 
-        {/* Shipment Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           {shipments.map((s, i) => (
-              <motion.div 
-                key={s.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-premium border border-slate-100 dark:border-white/5 group hover:border-emerald-500/50 transition-all"
-              >
-                 <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                       <div className="h-12 w-12 bg-slate-50 dark:bg-slate-950 rounded-2xl flex items-center justify-center font-black text-emerald-500 border border-slate-100 dark:border-white/5">
-                          {s.quantity}
-                       </div>
-                       <div>
-                          <h4 className="text-sm font-black uppercase tracking-tighter italic">{s.productId}</h4>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{s.vehicleNumber}</p>
-                       </div>
-                    </div>
-                    <Badge className="bg-emerald-500/10 text-emerald-500 border-none font-black text-[8px] px-3 py-1 uppercase">{s.status}</Badge>
-                 </div>
-
-                 <div className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-50 dark:border-white/5">
-                    <div className="space-y-1">
-                       <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Client</p>
-                       <p className="text-[10px] font-black uppercase truncate">{s.clientId}</p>
-                    </div>
-                    <div className="space-y-1">
-                       <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Location</p>
-                       <p className="text-[10px] font-black uppercase truncate">{s.locationId}</p>
-                    </div>
-                    <div className="space-y-1">
-                       <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Time</p>
-                       <p className="text-[10px] font-black uppercase truncate">{s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</p>
-                    </div>
-                 </div>
-              </motion.div>
-           ))}
+        {/* Table view logs instead of simple grid cards for professional register layout */}
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium overflow-hidden">
+           <div className="p-8 border-b border-slate-50 dark:border-slate-800">
+              <h3 className="text-lg font-black uppercase italic tracking-tighter text-slate-850 dark:text-white">Active Inward Storage Ledger</h3>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Historical physical register entries under active custody</p>
+           </div>
+           
+           <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                 <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800 text-slate-500">
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Bill #</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Date</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Client Name</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Farmer Name</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Commodity</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Bags (Custody)</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Mark</th>
+                       <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Storage Location</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredShipments.length > 0 ? (
+                      filteredShipments.map(s => (
+                         <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4 text-xs font-black text-slate-800 dark:text-white italic uppercase tracking-wider">{s.inBillNumber}</td>
+                            <td className="px-6 py-4 text-xs font-bold text-slate-600 dark:text-slate-350">{s.inwardDate || 'N/A'}</td>
+                            <td className="px-6 py-4 text-xs font-black text-slate-800 dark:text-white truncate max-w-[150px] uppercase">{s.clientName}</td>
+                            <td className="px-6 py-4 text-xs font-bold text-slate-600 dark:text-slate-350 truncate max-w-[150px] uppercase">{s.farmerName}</td>
+                            <td className="px-6 py-4 text-xs font-bold text-slate-600 dark:text-slate-350 uppercase">{s.commodityName} › {s.varietyName}</td>
+                            <td className="px-6 py-4 text-xs font-black text-emerald-500">
+                              {s.remainingBags !== undefined ? s.remainingBags : s.quantity} / {s.quantity} bags
+                            </td>
+                            <td className="px-6 py-4 text-xs font-black text-slate-800 dark:text-white uppercase">{s.mark || 'N/A'}</td>
+                            <td className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">{s.chamber} › {s.floor} › {s.block}</td>
+                         </tr>
+                      ))
+                    ) : (
+                       <tr>
+                          <td colSpan={8} className="px-6 py-12 text-center text-xs text-slate-400 italic">No inward storage registries logged matching search filter.</td>
+                       </tr>
+                    )}
+                 </tbody>
+              </table>
+           </div>
         </div>
       </div>
     </Layout>

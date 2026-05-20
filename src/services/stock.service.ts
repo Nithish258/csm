@@ -11,9 +11,9 @@ export const stockService = {
   /**
    * Adjust stock levels atomically
    */
-  async adjustStock(productId: string, delta: number, locationId: string, tenantId: string) {
+  async adjustStock(commodityId: string, varietyId: string, delta: number, locationId: string, tenantId: string) {
     return await dbService.executeTransaction(async (transaction) => {
-      const stockRef = doc(db, 'stock', `${tenantId}_${productId}_${locationId}`);
+      const stockRef = doc(db, 'stock', `${tenantId}_${commodityId}_${varietyId}_${locationId}`);
       const stockDoc = await transaction.get(stockRef);
       
       const currentQuantity = stockDoc.exists() ? stockDoc.data().quantity : 0;
@@ -25,7 +25,8 @@ export const stockService = {
 
       if (!stockDoc.exists()) {
         transaction.set(stockRef, {
-          productId,
+          commodityId,
+          varietyId,
           locationId,
           tenantId,
           quantity: newQuantity,
@@ -41,7 +42,7 @@ export const stockService = {
       // Emit event for side effects (occupancy, analytics)
       await eventBus.emit({ 
         type: 'STOCK_UPDATED', 
-        payload: { productId, delta, tenantId } 
+        payload: { commodityId, varietyId, delta, tenantId } 
       });
       
       if (locationId) {
@@ -56,8 +57,8 @@ export const stockService = {
   /**
    * Validate if enough stock is available before a transaction
    */
-  async validateAvailability(productId: string, locationId: string, required: number, tenantId: string) {
-    const stockRef = doc(db, 'stock', `${tenantId}_${productId}_${locationId}`);
+  async validateAvailability(commodityId: string, varietyId: string, locationId: string, required: number, tenantId: string) {
+    const stockRef = doc(db, 'stock', `${tenantId}_${commodityId}_${varietyId}_${locationId}`);
     const stockDoc = await getDoc(stockRef);
     
     if (!stockDoc.exists() || stockDoc.data().quantity < required) {
