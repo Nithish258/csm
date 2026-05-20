@@ -14,7 +14,8 @@ import {
   HelpCircle,
   Trash2,
   Boxes,
-  Home
+  Home,
+  Edit3
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -46,6 +47,26 @@ export default function Locations() {
     name: '', // Block Name
     subSlots: '',
   });
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setFormData({ chamber: '', floor: '', name: '', subSlots: '' });
+      setEditId(null);
+    }
+  };
+
+  const handleEditClick = (loc: any) => {
+    setEditId(loc.id);
+    setFormData({
+      chamber: loc.chamber || '',
+      floor: loc.floor || '',
+      name: loc.name || '',
+      subSlots: loc.subSlots || '',
+    });
+    setIsDialogOpen(true);
+  };
 
   useEffect(() => {
     const unsub = dbService.sync('locations', setLocations);
@@ -59,19 +80,25 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      await dbService.add('locations', {
-        ...formData,
-        capacity: 500, // Provide default capacity for legacy components
-        occupied: 0,
-        utilization: 0,
-        status: 'EMPTY',
-        tenantId: tenant.id,
-        createdAt: new Date(),
-      });
+      if (editId) {
+        await dbService.update('locations', editId, { ...formData });
+        toast.success('Storage Block updated successfully');
+      } else {
+        await dbService.add('locations', {
+          ...formData,
+          capacity: 500, // Provide default capacity for legacy components
+          occupied: 0,
+          utilization: 0,
+          status: 'EMPTY',
+          tenantId: tenant.id,
+          createdAt: new Date(),
+        });
+        toast.success('Storage Block registered successfully');
+      }
 
-      toast.success('Storage Block registered successfully');
       setIsDialogOpen(false);
       setFormData({ chamber: '', floor: '', name: '', subSlots: '' });
+      setEditId(null);
     } catch (error: any) {
       toast.error(error.message || 'Operation failed');
     } finally {
@@ -260,9 +287,14 @@ export default function Locations() {
                                           'bg-rose-500/10 text-rose-500'
                                         }`}>{loc.status}</Badge>
 
-                                        <button onClick={() => handleDelete(loc.id, loc.occupied || 0)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-slate-50 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-lg text-slate-400">
-                                           <Trash2 size={12} />
-                                        </button>
+                                        <div className="flex gap-2">
+                                           <button onClick={() => handleEditClick(loc)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-slate-50 dark:bg-slate-800 hover:bg-blue-500 hover:text-white rounded-lg text-slate-400">
+                                              <Edit3 size={12} />
+                                           </button>
+                                           <button onClick={() => handleDelete(loc.id, loc.occupied || 0)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-slate-50 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-lg text-slate-400">
+                                              <Trash2 size={12} />
+                                           </button>
+                                        </div>
                                      </div>
                                      <h4 className="text-lg font-black uppercase italic tracking-tighter text-slate-850 dark:text-white">{loc.name}</h4>
                                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">CAP: {loc.capacity}</p>
@@ -314,11 +346,13 @@ export default function Locations() {
            ))}
         </div>
 
-        {/* Create Block Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {/* Create / Edit Block Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
            <DialogContent className="max-w-md rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl">
               <DialogHeader className="mb-6">
-                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">Register Block Slot</DialogTitle>
+                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">
+                    {editId ? 'Edit Block Details' : 'Register Block Slot'}
+                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
                  <div className="space-y-2">
@@ -340,7 +374,7 @@ export default function Locations() {
                     <Input required placeholder="e.g. S1, S2, A, B (comma separated)" value={formData.subSlots} onChange={(e) => setFormData({ ...formData, subSlots: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
                  </div>
                  <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
-                    {loading ? 'Registering...' : 'Add Storage Slot'}
+                    {loading ? 'Processing...' : (editId ? 'Save Changes' : 'Add Storage Slot')}
                  </Button>
               </form>
            </DialogContent>
