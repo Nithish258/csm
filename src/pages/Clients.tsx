@@ -187,13 +187,44 @@ export default function Clients() {
   };
 
   // Compute live client ledger summary
-  const getClientLedger = (clientName: string) => {
-    const incoming = incomingShipments.filter(s => s.clientName === clientName || s.clientId === clientName);
-    const outgoing = outgoingShipments.filter(s => s.clientName === clientName || s.clientId === clientName);
+  const getClientLedger = (clientObj: any) => {
+    const clientName = clientObj.name;
+    const incoming = incomingShipments.filter(s => s.clientName === clientName || s.clientId === clientObj.id);
+    const outgoing = outgoingShipments.filter(s => s.clientName === clientName || s.clientId === clientObj.id);
+    
+    // Combine and sort for the register view
+    const combined = [
+      ...incoming.map(s => ({
+        ...s,
+        type: 'IN',
+        dateStr: s.inwardDate || (s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toISOString().split('T')[0] : ''),
+        inBill: s.inBillNumber || 'N/A',
+        outBill: '-',
+        inBags: s.quantity || 0,
+        outBags: 0,
+      })),
+      ...outgoing.map(s => ({
+        ...s,
+        type: 'OUT',
+        dateStr: s.outwardDate || (s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toISOString().split('T')[0] : ''),
+        inBill: '-',
+        outBill: s.orderId || 'N/A',
+        inBags: 0,
+        outBags: s.quantity || 0,
+      }))
+    ].sort((a, b) => new Date(a.dateStr).getTime() - new Date(b.dateStr).getTime());
+
+    let runningBalance = 0;
+    const ledgerTable = combined.map(item => {
+       runningBalance += item.inBags;
+       runningBalance -= item.outBags;
+       return { ...item, balanceBags: runningBalance };
+    });
+
     const totalIn = incoming.reduce((sum, s) => sum + (s.quantity || 0), 0);
     const totalOut = outgoing.reduce((sum, s) => sum + (s.quantity || 0), 0);
     const remaining = totalIn - totalOut;
-    return { incoming, outgoing, totalIn, totalOut, remaining };
+    return { incoming, outgoing, totalIn, totalOut, remaining, ledgerTable };
   };
 
   const filteredClients = clients.filter(c => 
@@ -456,9 +487,9 @@ export default function Clients() {
 
         {/* Ledger Transaction Dialog */}
         <Dialog open={!!ledgerClient} onOpenChange={(open) => !open && setLedgerClient(null)}>
-          <DialogContent className="max-w-3xl sm:max-w-3xl w-full rounded-[2.5rem] p-8 md:p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[80vh] overflow-y-auto custom-scrollbar space-y-6">
+          <DialogContent className="max-w-[95vw] w-full rounded-[2.5rem] p-8 md:p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar space-y-6">
             {ledgerClient && (() => {
-              const ledger = getClientLedger(ledgerClient.name);
+              const ledger = getClientLedger(ledgerClient);
               return (
                 <div className="space-y-8">
                   <DialogHeader>
@@ -484,50 +515,48 @@ export default function Clients() {
                     </div>
                   </div>
 
-                  {/* Incoming Transactions */}
-                  <div>
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                      <ArrowDownCircle size={14} className="text-emerald-500" /> {t('clients.incomingLots')} ({ledger.incoming.length})
-                    </h4>
-                    {ledger.incoming.length > 0 ? (
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                        {ledger.incoming.map((s: any) => (
-                          <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm font-black text-emerald-500">+{s.quantity} bags</span>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase">{s.commodityName} ({s.varietyName})</span>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-[9px] font-black text-slate-400 block">BILL: {s.inBillNumber}</span>
-                              <span className="text-[8px] font-bold text-slate-400">LOC: {s.chamber} › {s.floor} › {s.block}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : <p className="text-[10px] text-slate-400 italic">{t('clients.noIncoming')}</p>}
-                  </div>
-
-                  {/* Outgoing Transactions */}
-                  <div>
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                      <ArrowUpCircle size={14} className="text-rose-500" /> {t('clients.outgoingLots')} ({ledger.outgoing.length})
-                    </h4>
-                    {ledger.outgoing.length > 0 ? (
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                        {ledger.outgoing.map((s: any) => (
-                          <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm font-black text-rose-500">-{s.quantity} bags</span>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase">{s.commodityName} ({s.varietyName})</span>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-[9px] font-black text-slate-400 block">RO: {s.orderId}</span>
-                              <span className="text-[8px] font-bold text-slate-400">STATUS: {s.paymentStatus}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : <p className="text-[10px] text-slate-400 italic">{t('clients.noOutgoing')}</p>}
+                  {/* Combined Farmer Stock Register Table */}
+                  <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 shadow-inner">
+                     <table className="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                           <tr className="bg-slate-50 dark:bg-slate-850 text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Date</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">In Bill No.</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Out Bill No.</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Name of the Farmer</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Commodity</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Variety</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Block Number</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Mark</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border-r border-slate-200 dark:border-slate-800 text-right">Inward Bags</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest bg-rose-500/10 text-rose-600 border-r border-slate-200 dark:border-slate-800 text-right">Outward Bags</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 text-right">Balance Bags</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                           {ledger.ledgerTable.length > 0 ? (
+                              ledger.ledgerTable.map((row: any, idx: number) => (
+                                 <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                                    <td className="px-4 py-3 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-800">{row.dateStr || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-slate-800 dark:text-slate-300 border-r border-slate-100 dark:border-slate-800">{row.inBill}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-slate-800 dark:text-slate-300 border-r border-slate-100 dark:border-slate-800">{row.outBill}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black uppercase text-slate-900 dark:text-white border-r border-slate-100 dark:border-slate-800">{row.farmerName || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 border-r border-slate-100 dark:border-slate-800">{row.commodityName || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 border-r border-slate-100 dark:border-slate-800">{row.varietyName || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black uppercase text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-800">{row.block || row.locationId || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-800">{row.mark || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-emerald-600 border-r border-slate-100 dark:border-slate-800 text-right">{row.inBags > 0 ? row.inBags : '-'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-rose-600 border-r border-slate-100 dark:border-slate-800 text-right">{row.outBags > 0 ? row.outBags : '-'}</td>
+                                    <td className="px-4 py-3 text-[11px] font-black text-blue-600 bg-blue-50/30 dark:bg-blue-900/10 text-right">{row.balanceBags}</td>
+                                 </tr>
+                              ))
+                           ) : (
+                              <tr>
+                                 <td colSpan={11} className="px-4 py-8 text-center text-xs text-slate-400 italic">No registry transactions found for this client.</td>
+                              </tr>
+                           )}
+                        </tbody>
+                     </table>
                   </div>
                 </div>
               );
