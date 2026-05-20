@@ -181,21 +181,18 @@ export default function Outgoing() {
             </div>
         </div>
 
-        {/* Section 1: Stock Lot Search Engine */}
         <div className="space-y-6">
-           <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-premium space-y-6">
-              <div className="space-y-2">
-                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">1. Locate Custody Lot in Storage</h3>
-                 <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input 
-                      type="text" 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="SEARCH CUSTODY LOT BY CLIENT, FARMER, MARK, BILL NUMBER, COMMODITY, OR VARIETY..."
-                      className="w-full h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-xl pl-12 text-xs font-bold uppercase tracking-wider outline-none text-slate-900 dark:text-white placeholder:text-slate-500" 
-                    />
-                 </div>
+           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">1. Locate Custody Lot in Storage</h3>
+              <div className="relative w-full sm:w-80">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                 <input 
+                   type="text" 
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   placeholder="Search by client, farmer, bill, mark..."
+                   className="w-full h-10 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 text-[10px] font-bold uppercase tracking-wider outline-none text-slate-900 dark:text-white placeholder:text-slate-500" 
+                 />
               </div>
            </div>
 
@@ -206,7 +203,7 @@ export default function Outgoing() {
                  return (
                     <motion.div
                       key={lot.id}
-                      className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium flex flex-col justify-between min-h-[300px] hover:shadow-intense group hover:border-blue-500/50 transition-all"
+                      className="bg-transparent p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between min-h-[280px] hover:border-blue-500/50 group transition-all"
                     >
                        <div>
                          <div className="flex justify-between items-start mb-6">
@@ -251,7 +248,7 @@ export default function Outgoing() {
                  );
               })}
               {filteredLots.length === 0 && (
-                 <div className="col-span-full py-16 text-center bg-slate-50 dark:bg-slate-900 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-800">
+                 <div className="col-span-full py-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
                     <p className="text-xs text-slate-400 italic">No active custody lots matching query search.</p>
                  </div>
               )}
@@ -415,16 +412,16 @@ export default function Outgoing() {
         </Dialog>
 
         {/* Section 3: Dispatch Logs */}
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium overflow-hidden">
-           <div className="p-8 border-b border-slate-50 dark:border-slate-800">
-              <h3 className="text-lg font-black uppercase italic tracking-tighter text-slate-850 dark:text-white">Recent Release Dispatches</h3>
+        <div className="bg-transparent dark:bg-transparent rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden">
+           <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-lg font-black uppercase italic tracking-tighter text-slate-900 dark:text-white">Recent Release Dispatches</h3>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Log records of physical outward dispatches released from active storage custody</p>
            </div>
            
            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800 text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500">
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Release Order #</th>
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Date</th>
                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Client Name</th>

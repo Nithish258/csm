@@ -393,7 +393,7 @@ export default function Reports() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="space-y-4">
-             <h1 className="text-4xl font-extrabold text-[#111827] dark:text-white uppercase italic tracking-tight">{t('reports.title')}</h1>
+             <h1 className="text-3xl font-extrabold text-[#111827] dark:text-white uppercase italic tracking-tight">{t('reports.title')}</h1>
              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('reports.subtitle')}</p>
           </div>
 
@@ -421,7 +421,7 @@ export default function Reports() {
         </div>
 
         {/* Tab Selection */}
-        <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-premium overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
            {TABS.map(tab => (
               <button
                 key={tab.id}
@@ -442,7 +442,7 @@ export default function Reports() {
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-200/50 dark:border-slate-800 shadow-premium space-y-6"
+                className="p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-5"
               >
                  <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -527,8 +527,8 @@ export default function Reports() {
         </AnimatePresence>
 
         {/* Analytical Table Card (Restored Register Layout) */}
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-premium border border-slate-200/50 dark:border-slate-800 overflow-hidden">
-           <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+           <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
                  <h3 className="text-lg font-black uppercase italic tracking-tighter text-slate-900 dark:text-white">{t('common.activeFilters')}</h3>
                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
@@ -542,7 +542,7 @@ export default function Reports() {
                   <TableHeader>
                      <TableRow className="hover:bg-slate-50/50 border-b border-slate-100 dark:border-slate-800">
                         {getHeadersForTab().map((h, i) => (
-                           <TableHead key={i} className="font-black text-slate-900 dark:text-slate-300 text-[9px] uppercase tracking-widest px-6 h-14 bg-slate-50 dark:bg-slate-850 border-none whitespace-nowrap">{h}</TableHead>
+                           <TableHead key={i} className="font-black text-slate-900 dark:text-slate-300 text-[9px] uppercase tracking-widest px-6 h-12 border-none whitespace-nowrap">{h}</TableHead>
                         ))}
                      </TableRow>
                   </TableHeader>
