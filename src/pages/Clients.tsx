@@ -30,6 +30,7 @@ export default function Clients() {
   const [isFarmerOpen, setIsFarmerOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [ledgerClient, setLedgerClient] = useState<any | null>(null);
+  const [selectedFarmerLedger, setSelectedFarmerLedger] = useState<{ client: any, farmer: any } | null>(null);
 
   // Form States
   const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '', gst: '', address: '' });
@@ -206,6 +207,47 @@ export default function Clients() {
     const outgoing = outgoingShipments.filter(s => s.clientName === clientName || s.clientId === clientObj.id);
     
     // Combine and sort for the register view
+    const combined = [
+      ...incoming.map(s => ({
+        ...s,
+        type: 'IN',
+        dateStr: s.inwardDate || (s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toISOString().split('T')[0] : ''),
+        inBill: s.inBillNumber || 'N/A',
+        outBill: '-',
+        inBags: s.quantity || 0,
+        outBags: 0,
+      })),
+      ...outgoing.map(s => ({
+        ...s,
+        type: 'OUT',
+        dateStr: s.outwardDate || (s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toISOString().split('T')[0] : ''),
+        inBill: '-',
+        outBill: s.orderId || 'N/A',
+        inBags: 0,
+        outBags: s.quantity || 0,
+      }))
+    ].sort((a, b) => new Date(a.dateStr).getTime() - new Date(b.dateStr).getTime());
+
+    let runningBalance = 0;
+    const ledgerTable = combined.map(item => {
+       runningBalance += item.inBags;
+       runningBalance -= item.outBags;
+       return { ...item, balanceBags: runningBalance };
+    });
+
+    const totalIn = incoming.reduce((sum, s) => sum + (s.quantity || 0), 0);
+    const totalOut = outgoing.reduce((sum, s) => sum + (s.quantity || 0), 0);
+    const remaining = totalIn - totalOut;
+    return { incoming, outgoing, totalIn, totalOut, remaining, ledgerTable };
+  };
+
+  // Compute live single farmer ledger summary
+  const getFarmerLedger = (clientObj: any, farmerObj: any) => {
+    const clientName = clientObj.name;
+    const farmerName = farmerObj.name;
+    const incoming = incomingShipments.filter(s => (s.clientName === clientName || s.clientId === clientObj.id) && (s.farmerName === farmerName || s.farmerId === farmerObj.id));
+    const outgoing = outgoingShipments.filter(s => (s.clientName === clientName || s.clientId === clientObj.id) && (s.farmerName === farmerName || s.farmerId === farmerObj.id));
+    
     const combined = [
       ...incoming.map(s => ({
         ...s,
@@ -501,11 +543,24 @@ export default function Clients() {
                         {(selectedClient.farmers || []).length > 0 ? (
                           (selectedClient.farmers || []).map((farmer: any) => (
                             <tr key={farmer.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
-                              <td className="px-6 py-4 text-xs font-black uppercase italic text-slate-800 dark:text-white">{farmer.name}</td>
+                              <td 
+                                onClick={() => setSelectedFarmerLedger({ client: selectedClient, farmer })}
+                                className="px-6 py-4 text-xs font-black uppercase italic text-emerald-500 hover:text-emerald-600 hover:underline cursor-pointer"
+                              >
+                                {farmer.name}
+                              </td>
                               <td className="px-6 py-4 text-xs font-bold text-slate-600 dark:text-slate-300">{farmer.phone || 'N/A'}</td>
                               <td className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">{farmer.id}</td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-2">
+                                  <Button 
+                                    onClick={() => setSelectedFarmerLedger({ client: selectedClient, farmer })} 
+                                    variant="ghost" 
+                                    className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-emerald-500 hover:text-white p-0"
+                                    title="View Farmer Ledger"
+                                  >
+                                    <BookOpen size={12} />
+                                  </Button>
                                   <Button onClick={() => openEditFarmer(farmer)} variant="ghost" className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-emerald-500 hover:text-white p-0">
                                     <Pencil size={12} />
                                   </Button>
@@ -644,6 +699,90 @@ export default function Clients() {
                            )}
                         </tbody>
                      </table>
+                  </div>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Farmer Ledger Dialog */}
+        <Dialog open={!!selectedFarmerLedger} onOpenChange={(open) => !open && setSelectedFarmerLedger(null)}>
+          <DialogContent className="max-w-[95vw] w-full rounded-[2.5rem] p-8 md:p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar space-y-6">
+            {selectedFarmerLedger && (() => {
+              const ledger = getFarmerLedger(selectedFarmerLedger.client, selectedFarmerLedger.farmer);
+              return (
+                <div className="space-y-8">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
+                      {selectedFarmerLedger.farmer.name} ({selectedFarmerLedger.client.name}) — Farmer Ledger
+                    </DialogTitle>
+                  </DialogHeader>
+                  
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-5 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl text-center border border-emerald-100 dark:border-emerald-900/30">
+                      <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest mb-1">Total Inward</p>
+                      <p className="text-2xl font-black text-emerald-600 italic">{ledger.totalIn}</p>
+                      <p className="text-[8px] font-bold text-emerald-500 uppercase">Bags</p>
+                    </div>
+                    <div className="p-5 bg-rose-50 dark:bg-rose-950/30 rounded-2xl text-center border border-rose-100 dark:border-rose-900/30">
+                      <p className="text-[9px] font-black uppercase text-rose-600 tracking-widest mb-1">Total Outward</p>
+                      <p className="text-2xl font-black text-rose-600 italic">{ledger.totalOut}</p>
+                      <p className="text-[8px] font-bold text-rose-500 uppercase">Bags</p>
+                    </div>
+                    <div className="p-5 bg-blue-50 dark:bg-blue-950/30 rounded-2xl text-center border border-blue-100 dark:border-blue-900/30">
+                      <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mb-1">Balance Stock</p>
+                      <p className="text-2xl font-black text-blue-600 italic">{ledger.remaining}</p>
+                      <p className="text-[8px] font-bold text-blue-500 uppercase">Bags</p>
+                    </div>
+                  </div>
+
+                  {/* Transaction Table */}
+                  <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 shadow-inner">
+                     <table className="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                           <tr className="bg-slate-50 dark:bg-slate-850 text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Date</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">In Bill No.</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Out Bill No.</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Commodity</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Variety</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Block Number</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest border-r border-slate-200 dark:border-slate-800">Mark</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border-r border-slate-200 dark:border-slate-800 text-right">Inward Bags</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest bg-rose-500/10 text-rose-600 border-r border-slate-200 dark:border-slate-800 text-right">Outward Bags</th>
+                              <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 text-right">Balance Bags</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                           {ledger.ledgerTable.length > 0 ? (
+                              ledger.ledgerTable.map((row: any, idx: number) => (
+                                 <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                                    <td className="px-4 py-3 text-[10px] font-bold text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-800">{row.dateStr || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-slate-800 dark:text-slate-300 border-r border-slate-100 dark:border-slate-800">{row.inBill}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-slate-800 dark:text-slate-300 border-r border-slate-100 dark:border-slate-800">{row.outBill}</td>
+                                    <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 border-r border-slate-100 dark:border-slate-800">{row.commodityName || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500 border-r border-slate-100 dark:border-slate-800">{row.varietyName || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black uppercase text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-800">{row.block || row.locationId || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400 border-r border-slate-100 dark:border-slate-800">{row.mark || 'N/A'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-emerald-600 border-r border-slate-100 dark:border-slate-800 text-right">{row.inBags > 0 ? row.inBags : '-'}</td>
+                                    <td className="px-4 py-3 text-[10px] font-black text-rose-600 border-r border-slate-100 dark:border-slate-800 text-right">{row.outBags > 0 ? row.outBags : '-'}</td>
+                                    <td className="px-4 py-3 text-[11px] font-black text-blue-600 bg-blue-50/30 dark:bg-blue-900/10 text-right">{row.balanceBags}</td>
+                                 </tr>
+                              ))
+                           ) : (
+                              <tr>
+                                 <td colSpan={10} className="px-4 py-8 text-center text-xs text-slate-400 italic">No registry transactions found for this farmer.</td>
+                              </tr>
+                           )}
+                        </tbody>
+                     </table>
+                  </div>
+                  <div className="flex justify-end pt-4">
+                    <Button onClick={() => setSelectedFarmerLedger(null)} variant="outline" className="h-12 px-6 rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                      Close Ledger
+                    </Button>
                   </div>
                 </div>
               );
