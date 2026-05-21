@@ -21,6 +21,7 @@ export default function Clients() {
   const [clients, setClients] = useState<any[]>([]);
   const [incomingShipments, setIncomingShipments] = useState<any[]>([]);
   const [outgoingShipments, setOutgoingShipments] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -33,6 +34,7 @@ export default function Clients() {
   // Form States
   const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '', gst: '', address: '' });
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
+  const [formFarmers, setFormFarmers] = useState<any[]>([]);
 
   const [farmerForm, setFarmerForm] = useState({ name: '', phone: '' });
   const [editingFarmerId, setEditingFarmerId] = useState<string | null>(null);
@@ -54,16 +56,22 @@ export default function Clients() {
       setOutgoingShipments(data);
     });
 
+    const unsubInvoices = dbService.sync('invoices', (data) => {
+      setInvoices(data);
+    });
+
     return () => {
       unsubClients();
       unsubIncoming();
       unsubOutgoing();
+      unsubInvoices();
     };
   }, []);
 
   const openCreateClient = () => {
     setClientForm({ name: '', phone: '', email: '', gst: '', address: '' });
     setEditingClientId(null);
+    setFormFarmers([]);
     setIsClientOpen(true);
   };
 
@@ -77,6 +85,7 @@ export default function Clients() {
       address: client.address || ''
     });
     setEditingClientId(client.id);
+    setFormFarmers(client.farmers || []);
     setIsClientOpen(true);
   };
 
@@ -84,14 +93,18 @@ export default function Clients() {
     e.preventDefault();
     setLoading(true);
     try {
+      const sanitizedFarmers = formFarmers.filter(f => f.name.trim());
       if (editingClientId) {
-        await dbService.update('clients', editingClientId, clientForm);
+        await dbService.update('clients', editingClientId, {
+          ...clientForm,
+          farmers: sanitizedFarmers
+        });
         toast.success(t('clients.updateClient'));
       } else {
         await dbService.add('clients', {
           ...clientForm,
           status: 'ACTIVE',
-          farmers: []
+          farmers: sanitizedFarmers
         });
         toast.success(t('clients.registerClient'));
       }
@@ -227,6 +240,22 @@ export default function Clients() {
     return { incoming, outgoing, totalIn, totalOut, remaining, ledgerTable };
   };
 
+  const getPaymentStatusBadge = (client: any) => {
+    const clientInvoices = invoices.filter(inv => inv.clientId === client.name || inv.clientId === client.id);
+    if (clientInvoices.length === 0) {
+      return <Badge className="bg-slate-500/10 text-slate-500 border-none font-bold text-[8px] uppercase tracking-wider">No Invoices</Badge>;
+    }
+    const totalAmount = clientInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    const totalPaid = clientInvoices.reduce((sum, inv) => sum + (inv.paidAmount || 0), 0);
+    const balance = totalAmount - totalPaid;
+
+    if (balance <= 0) {
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-none font-bold text-[8px] uppercase tracking-wider">All Settled</Badge>;
+    } else {
+      return <Badge className="bg-amber-500/10 text-amber-500 border-none font-bold text-[8px] uppercase tracking-wider">Dues: ₹{balance.toLocaleString()}</Badge>;
+    }
+  };
+
   const filteredClients = clients.filter(c => 
     c.name?.toLowerCase().includes(search.toLowerCase()) || 
     c.phone?.includes(search)
@@ -274,7 +303,7 @@ export default function Clients() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            <AnimatePresence>
               {filteredClients.map((client, i) => {
-                const ledger = getClientLedger(client.name);
+                const ledger = getClientLedger(client);
                 return (
                  <motion.div
                    key={client.id}
@@ -282,7 +311,7 @@ export default function Clients() {
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: i * 0.05 }}
                    onClick={() => setSelectedClient(client)}
-                   className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-premium border border-slate-200/50 dark:border-slate-800 group hover:border-emerald-500/50 hover:shadow-[0_20px_50px_-12px_rgba(16,185,129,0.12)] hover:-translate-y-1 transition-all relative overflow-hidden flex flex-col justify-between min-h-[320px] cursor-pointer"
+                   className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-premium border border-slate-200/50 dark:border-white/5 group hover:border-emerald-500/50 hover:shadow-[0_20px_50px_-12px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_20px_50px_-12px_rgba(16,185,129,0.25)] hover:-translate-y-1 transition-all relative overflow-hidden flex flex-col justify-between min-h-[350px] cursor-pointer"
                  >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-all" />
                     
@@ -291,7 +320,10 @@ export default function Clients() {
                           <div className="h-16 w-16 bg-slate-50 dark:bg-slate-850 rounded-3xl flex items-center justify-center font-black text-2xl text-emerald-500 border border-slate-100 dark:border-slate-800 shadow-inner">
                              {client.name?.charAt(0)}
                           </div>
-                          <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-4 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">{client.status}</Badge>
+                          <div className="flex flex-col items-end gap-1.5">
+                            <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-4 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest">{client.status || 'ACTIVE'}</Badge>
+                            {getPaymentStatusBadge(client)}
+                          </div>
                       </div>
 
                       <div className="space-y-1 mb-6">
@@ -303,15 +335,15 @@ export default function Clients() {
                     <div>
                       <div className="grid grid-cols-3 gap-2 mb-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                           <div className="space-y-1">
-                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.totalIn')}</p>
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.totalIn', 'Inward Bags')}</p>
                              <p className="text-sm font-black text-emerald-500">{ledger.totalIn}</p>
                           </div>
                           <div className="space-y-1">
-                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.totalOut')}</p>
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.totalOut', 'Outward Bags')}</p>
                              <p className="text-sm font-black text-rose-500">{ledger.totalOut}</p>
                           </div>
                           <div className="space-y-1">
-                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.balance')}</p>
+                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('clients.balance', 'Balance Bags')}</p>
                              <p className="text-sm font-black text-blue-500">{ledger.remaining}</p>
                           </div>
                       </div>
@@ -336,7 +368,7 @@ export default function Clients() {
 
         {/* Client Account Form Dialog */}
         <Dialog open={isClientOpen} onOpenChange={setIsClientOpen}>
-          <DialogContent className="max-w-2xl sm:max-w-[580px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden space-y-6">
+          <DialogContent className="max-w-3xl sm:max-w-[720px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto space-y-6">
             <DialogHeader className="mb-2">
               <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
                 {editingClientId ? t('clients.editClient') : t('clients.newClient')}
@@ -367,6 +399,61 @@ export default function Clients() {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('clients.officeAddress')}</Label>
                 <Input required value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
               </div>
+
+              {/* Farmers Section (Optional) */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-850">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Farmers Under Client (Optional)</Label>
+                  <Button
+                    type="button"
+                    onClick={() => setFormFarmers([...formFarmers, { id: `farm-${Date.now()}-${formFarmers.length}`, name: '', phone: '' }])}
+                    className="h-8 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-700 dark:text-slate-350 rounded-xl px-4 text-[10px] font-black uppercase tracking-wider"
+                  >
+                    + Add Farmer
+                  </Button>
+                </div>
+
+                <div className="max-h-[160px] overflow-y-auto space-y-3 pr-2 scrollbar-thin">
+                  {formFarmers.length === 0 ? (
+                    <p className="text-[10px] text-slate-400 italic font-medium ml-1">No farmers added. You can add them now or anytime later.</p>
+                  ) : (
+                    formFarmers.map((farmer, idx) => (
+                      <div key={farmer.id} className="flex gap-3 items-center">
+                        <Input
+                          required
+                          placeholder="Farmer Name"
+                          value={farmer.name}
+                          onChange={(e) => {
+                            const newFarmers = [...formFarmers];
+                            newFarmers[idx].name = e.target.value;
+                            setFormFarmers(newFarmers);
+                          }}
+                          className="h-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-xs font-bold uppercase"
+                        />
+                        <Input
+                          placeholder="Mobile Number"
+                          value={farmer.phone}
+                          onChange={(e) => {
+                            const newFarmers = [...formFarmers];
+                            newFarmers[idx].phone = e.target.value;
+                            setFormFarmers(newFarmers);
+                          }}
+                          className="h-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 text-xs font-bold uppercase"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setFormFarmers(formFarmers.filter((_, fIdx) => fIdx !== idx))}
+                          className="h-10 w-10 p-0 text-slate-400 hover:text-rose-500 bg-slate-50 dark:bg-slate-950 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
               <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
                 {loading ? t('common.loading') : editingClientId ? t('clients.updateClient') : t('clients.registerClient')}
               </Button>

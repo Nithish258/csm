@@ -182,16 +182,16 @@ export default function Products() {
                 <Package className="h-6 w-6 text-white" />
               </div>
               <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight uppercase italic">
-                Commodities & <span className="text-emerald-500">Varieties</span>
+                {t('products.title', 'Commodities & Varieties')}
               </h2>
             </div>
             <p className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-xs">
-              Manage physical register catalogs of storage commodities and their specific sub-varieties.
+              {t('products.subtitle', 'Manage physical register catalogs of storage commodities and their specific sub-varieties.')}
             </p>
           </div>
 
           <Button onClick={openCreateCommodity} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-2xl px-8 h-14 font-bold uppercase tracking-wider text-xs shadow-xl transition-all hover:scale-[1.02] active:scale-95">
-            <Plus className="h-5 w-5 mr-3" /> New Commodity
+            <Plus className="h-5 w-5 mr-3" /> {t('products.addNew', 'New Commodity')}
           </Button>
         </div>
 
@@ -203,7 +203,7 @@ export default function Products() {
                 type="text" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="SEARCH COMMODITIES BY NAME OR CATEGORY..."
+                placeholder={t('products.searchPlaceholder', 'SEARCH COMMODITIES BY NAME OR CATEGORY...')}
                 className="w-full h-12 bg-slate-50 dark:bg-slate-950 border-none rounded-xl pl-12 text-xs font-bold uppercase tracking-wider outline-none text-slate-900 dark:text-white placeholder:text-slate-500" 
               />
            </div>
@@ -237,8 +237,8 @@ export default function Products() {
 
                     <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
                        <div className="space-y-1">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Varieties</p>
-                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{(commodity.varieties || []).length} Types</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t('products.varietiesLabel', 'Varieties')}</p>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{(commodity.varieties || []).length} {t('products.typesLabel', 'Types')}</p>
                        </div>
                        <div className="flex gap-2">
                           <Button onClick={(e) => openEditCommodity(commodity, e)} variant="ghost" className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all p-0">
@@ -259,35 +259,37 @@ export default function Products() {
 
         {/* Commodity Create / Edit Dialog */}
         <Dialog open={isCommodityOpen} onOpenChange={setIsCommodityOpen}>
-          <DialogContent className="max-w-md sm:max-w-[460px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden space-y-6">
+          <DialogContent className="max-w-3xl sm:max-w-[720px] w-full rounded-[2.5rem] p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden space-y-6">
             <DialogHeader className="mb-2">
               <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
-                {editingCommodityId ? 'Edit Commodity' : 'New Commodity'}
+                {editingCommodityId ? t('products.editTitle', 'Edit Commodity') : t('products.createTitle', 'New Commodity')}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCommoditySubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Commodity Name</Label>
-                <Input 
-                  required 
-                  placeholder="e.g. Red Chilli, Cotton, Maize"
-                  value={commodityForm.name}
-                  onChange={(e) => setCommodityForm({ ...commodityForm, name: e.target.value })}
-                  className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Category</Label>
-                <Input 
-                  required 
-                  placeholder="e.g. Spices, Grains, Cash Crops"
-                  value={commodityForm.category}
-                  onChange={(e) => setCommodityForm({ ...commodityForm, category: e.target.value })}
-                  className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('products.commodityName', 'Commodity Name')}</Label>
+                  <Input 
+                    required 
+                    placeholder={t('products.commodityPlaceholder', 'e.g. Red Chilli, Cotton, Maize')}
+                    value={commodityForm.name}
+                    onChange={(e) => setCommodityForm({ ...commodityForm, name: e.target.value })}
+                    className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('products.categoryName', 'Category')}</Label>
+                  <Input 
+                    required 
+                    placeholder={t('products.categoryPlaceholder', 'e.g. Spices, Grains, Cash Crops')}
+                    value={commodityForm.category}
+                    onChange={(e) => setCommodityForm({ ...commodityForm, category: e.target.value })}
+                    className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
+                  />
+                </div>
               </div>
               <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
-                {loading ? 'Saving...' : editingCommodityId ? 'Update Commodity' : 'Create Commodity'}
+                {loading ? t('products.saveChanges', 'Saving...') : editingCommodityId ? t('products.updateButton', 'Update Commodity') : t('products.createButton', 'Create Commodity')}
               </Button>
             </form>
           </DialogContent>
@@ -305,21 +307,21 @@ export default function Products() {
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Registry Code: {selectedCommodity.id}</p>
                   </div>
                   <Button onClick={openAddVariety} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-xl px-6 h-12 font-bold uppercase tracking-wider text-[10px] gap-2 shadow-md">
-                    <Plus size={16} /> Add Variety
+                    <Plus size={16} /> {t('products.addVariety', 'Add Variety')}
                   </Button>
                 </div>
 
                 {/* Varieties Table */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Registered Varieties</h3>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">{t('products.subVarieties', 'Registered Varieties')}</h3>
                   <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-850 text-slate-500 border-b border-slate-100 dark:border-slate-800">
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Variety Name</th>
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Default Unit</th>
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Storage Rate (₹)</th>
-                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-right">Actions</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">{t('products.varietyName', 'Variety Name')}</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">{t('products.unit', 'Default Unit')}</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">{t('products.rate', 'Storage Rate (₹)')}</th>
+                          <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-right">{t('products.actionsLabel', 'Actions')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -343,7 +345,7 @@ export default function Products() {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={4} className="px-6 py-8 text-center text-xs text-slate-400 italic">No varieties added to this commodity yet. Add your first variety to begin tracking inventory.</td>
+                            <td colSpan={4} className="px-6 py-8 text-center text-xs text-slate-400 italic">{t('products.noVarieties', 'No varieties added to this commodity yet. Add your first variety to begin tracking inventory.')}</td>
                           </tr>
                         )}
                       </tbody>
@@ -353,7 +355,7 @@ export default function Products() {
 
                 <div className="flex justify-end pt-4">
                   <Button onClick={() => setSelectedCommodity(null)} variant="outline" className="h-12 px-6 rounded-xl font-bold uppercase tracking-widest text-[10px]">
-                    Close Registry
+                    {t('products.closeModal', 'Close Registry')}
                   </Button>
                 </div>
               </div>
@@ -366,15 +368,15 @@ export default function Products() {
           <DialogContent className="max-w-md sm:max-w-[460px] w-full rounded-[2rem] p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl z-[200] overflow-hidden space-y-6">
             <DialogHeader className="mb-2">
               <DialogTitle className="text-xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
-                {editingVarietyId ? 'Edit Variety' : 'Add New Variety'}
+                {editingVarietyId ? t('products.editVariety', 'Edit Variety') : t('products.registerVariety', 'Add New Variety')}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleVarietySubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Variety Name</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('products.varietyName', 'Variety Name')}</Label>
                 <Input 
                   required 
-                  placeholder="e.g. Teja, 341, Wonder Hot, Chapata"
+                  placeholder={t('products.varietyPlaceholder', 'e.g. Teja, 341, Wonder Hot, Chapata')}
                   value={varietyForm.name}
                   onChange={(e) => setVarietyForm({ ...varietyForm, name: e.target.value })}
                   className="h-14 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" 
@@ -382,7 +384,7 @@ export default function Products() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Default Unit</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('products.unit', 'Default Unit')}</Label>
                   <Input 
                     required 
                     value={varietyForm.unit}
@@ -391,7 +393,7 @@ export default function Products() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Storage Rate / Unit (₹)</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('products.baseRate', 'Storage Rate / Unit (₹)')}</Label>
                   <Input 
                     type="number"
                     required 
@@ -402,7 +404,7 @@ export default function Products() {
                 </div>
               </div>
               <Button type="submit" disabled={loading} className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
-                {loading ? 'Saving...' : editingVarietyId ? 'Update Variety' : 'Add Variety'}
+                {loading ? t('products.saveChanges', 'Saving...') : editingVarietyId ? t('products.editVariety', 'Update Variety') : t('products.addVariety', 'Add Variety')}
               </Button>
             </form>
           </DialogContent>

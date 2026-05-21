@@ -160,16 +160,16 @@ export default function Locations() {
                 <MapPin className="h-6 w-6 text-white" />
               </div>
               <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight uppercase italic">
-                Chambers & <span className="text-emerald-500">Blocks Map</span>
+                {t('locations.title', 'Chambers & Blocks Map')}
               </h2>
             </div>
             <p className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-xs">
-              Visual structural topology maps of active storage cold rooms, floors, and slot allotments.
+              {t('locations.subtitle', 'Visual structural topology maps of active storage cold rooms, floors, and slot allotments.')}
             </p>
           </div>
 
           <Button onClick={() => setIsDialogOpen(true)} className="bg-slate-900 dark:bg-emerald-500 hover:bg-slate-800 dark:hover:bg-emerald-600 text-white rounded-2xl px-8 h-14 font-bold uppercase tracking-wider text-xs shadow-xl transition-all hover:scale-[1.02] active:scale-95">
-            <Plus className="h-5 w-5 mr-3" /> New Block Slot
+            <Plus className="h-5 w-5 mr-3" /> {t('locations.addNew', 'New Block Slot')}
           </Button>
         </div>
 
@@ -177,7 +177,7 @@ export default function Locations() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium flex items-center justify-between">
               <div>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Global Storage Capacity</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('locations.globalCapacity', 'Global Storage Capacity')}</p>
                  <h4 className="text-3xl font-black italic tracking-tighter text-slate-850 dark:text-white">{totalCapacity}</h4>
               </div>
               <div className="h-12 w-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400">
@@ -187,7 +187,7 @@ export default function Locations() {
 
            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium flex items-center justify-between">
               <div>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Stock in Storage</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('locations.totalStock', 'Total Stock in Storage')}</p>
                  <h4 className="text-3xl font-black italic tracking-tighter text-emerald-500">{totalOccupied}</h4>
               </div>
               <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
@@ -197,8 +197,8 @@ export default function Locations() {
 
            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-premium flex items-center justify-between">
               <div>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Global Occupancy Utilization</p>
-                 <h4 className="text-3xl font-black italic tracking-tighter text-blue-500">{globalUtilization}% <span className="text-xs font-bold text-slate-400 uppercase not-italic">Filled</span></h4>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('locations.globalUtilization', 'Global Occupancy Utilization')}</p>
+                 <h4 className="text-3xl font-black italic tracking-tighter text-blue-500">{globalUtilization}% <span className="text-xs font-bold text-slate-400 uppercase not-italic">{t('locations.filled', 'Filled')}</span></h4>
               </div>
               <div className="h-12 w-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
                  <Home size={22} />
@@ -215,7 +215,7 @@ export default function Locations() {
                    type="text" 
                    value={searchQuery}
                    onChange={(e) => setSearchQuery(e.target.value)}
-                   placeholder="SEARCH MAP BY CHAMBER, FLOOR OR BLOCK SLOT ID..."
+                   placeholder={t('locations.searchPlaceholder', 'SEARCH MAP BY CHAMBER, FLOOR OR BLOCK SLOT ID...')}
                    className="w-full h-12 bg-slate-50 dark:bg-slate-950 border-none rounded-xl pl-12 text-xs font-bold uppercase tracking-wider outline-none text-slate-900 dark:text-white placeholder:text-slate-500" 
                  />
               </div>
@@ -227,7 +227,7 @@ export default function Locations() {
                       onChange={(e) => setFilterChamber(e.target.value)}
                       className="w-full h-12 bg-slate-50 dark:bg-slate-950 border-none rounded-xl px-4 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-300"
                     >
-                       <option value="ALL">ALL CHAMBERS</option>
+                       <option value="ALL">{t('locations.allChambers', 'ALL CHAMBERS')}</option>
                        {chambers.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
                     </select>
                  </div>
@@ -238,10 +238,10 @@ export default function Locations() {
                       onChange={(e) => setFilterStatus(e.target.value)}
                       className="w-full h-12 bg-slate-50 dark:bg-slate-950 border-none rounded-xl px-4 text-xs font-bold uppercase outline-none text-slate-700 dark:text-slate-300"
                     >
-                       <option value="ALL">ALL STATUS STATES</option>
-                       <option value="EMPTY">🟢 EMPTY BLOCKS</option>
-                       <option value="PARTIAL">🟡 PARTIAL OCCUPANCY</option>
-                       <option value="FULL">🔴 FULL OCCUPANCY</option>
+                       <option value="ALL">{t('locations.allStatus', 'ALL STATUS STATES')}</option>
+                       <option value="EMPTY">{t('locations.emptyBlocks', '🟢 EMPTY BLOCKS')}</option>
+                       <option value="PARTIAL">{t('locations.partialOccupancy', '🟡 PARTIAL OCCUPANCY')}</option>
+                       <option value="FULL">{t('locations.fullOccupancy', '🔴 FULL OCCUPANCY')}</option>
                     </select>
                  </div>
               </div>
@@ -302,7 +302,7 @@ export default function Locations() {
 
                                    <div className="space-y-2 pt-4">
                                       <div className="flex justify-between items-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                                         <span>Occupied</span>
+                                         <span>{t('locations.occupied', 'Occupied')}</span>
                                          <span className="font-black italic">{loc.occupied || 0}</span>
                                       </div>
                                       <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -319,7 +319,7 @@ export default function Locations() {
 
                                     {/* Mock Sub-Slots for visual hierarchy */}
                                     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Sub-Slots / Sub-Blocks</p>
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{t('locations.subSlots', 'Sub-Slots / Sub-Blocks')}</p>
                                         <div className="grid grid-cols-4 gap-2">
                                             {(loc.subSlots ? loc.subSlots.split(',').map((s: string) => s.trim()).filter(Boolean) : [1, 2, 3, 4]).map((slot: any) => {
                                                 const slotStocks = stocks.filter(s => s.locationId === loc.id && s.subSlot === slot && s.quantity > 0);
@@ -348,37 +348,39 @@ export default function Locations() {
 
         {/* Create / Edit Block Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-           <DialogContent className="max-w-md rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl">
-              <DialogHeader className="mb-6">
-                 <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">
-                    {editId ? 'Edit Block Details' : 'Register Block Slot'}
-                 </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Chamber Room</Label>
-                    <Input required placeholder="e.g. Chamber 1, Chamber 2" value={formData.chamber} onChange={(e) => setFormData({ ...formData, chamber: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
-                 </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Floor Level</Label>
-                       <Input required placeholder="e.g. Floor 1, Floor 2" value={formData.floor} onChange={(e) => setFormData({ ...formData, floor: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Block / Bay Name</Label>
-                       <Input required placeholder="e.g. Block A, Slot B" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
-                    </div>
-                 </div>
-                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Subslot / Subblock</Label>
-                    <Input required placeholder="e.g. S1, S2, A, B (comma separated)" value={formData.subSlots} onChange={(e) => setFormData({ ...formData, subSlots: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none" />
-                 </div>
-                 <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
-                    {loading ? 'Processing...' : (editId ? 'Save Changes' : 'Add Storage Slot')}
-                 </Button>
-              </form>
-           </DialogContent>
-        </Dialog>
+            <DialogContent className="max-w-3xl sm:max-w-[720px] w-full rounded-[2.5rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl">
+               <DialogHeader className="mb-6">
+                  <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
+                     {editId ? t('locations.editBlock', 'Edit Block Details') : t('locations.registerBlock', 'Register Block Slot')}
+                  </DialogTitle>
+               </DialogHeader>
+               <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('locations.chamberRoom', 'Chamber Room')}</Label>
+                        <Input required placeholder={t('locations.chamberPlaceholder', 'e.g. Chamber 1, Chamber 2')} value={formData.chamber} onChange={(e) => setFormData({ ...formData, chamber: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
+                     </div>
+                     <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('locations.floorLevel', 'Floor Level')}</Label>
+                        <Input required placeholder={t('locations.floorPlaceholder', 'e.g. Floor 1, Floor 2')} value={formData.floor} onChange={(e) => setFormData({ ...formData, floor: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('locations.blockName', 'Block / Bay Name')}</Label>
+                        <Input required placeholder={t('locations.blockPlaceholder', 'e.g. Block A, Slot B')} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
+                     </div>
+                     <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('locations.subslotLabel', 'Subslot / Subblock')}</Label>
+                        <Input required placeholder={t('locations.subslotPlaceholder', 'e.g. S1, S2, A, B (comma separated)')} value={formData.subSlots} onChange={(e) => setFormData({ ...formData, subSlots: e.target.value })} className="h-14 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl px-6 text-xs font-bold uppercase outline-none text-slate-900 dark:text-white" />
+                     </div>
+                  </div>
+                  <Button type="submit" disabled={loading} className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-emerald-500/20">
+                     {loading ? t('locations.processing', 'Processing...') : (editId ? t('locations.saveChanges', 'Save Changes') : t('locations.addStorageSlot', 'Add Storage Slot'))}
+                  </Button>
+               </form>
+            </DialogContent>
+         </Dialog>
          {/* Sub-Slot Details Dialog */}
          <Dialog open={!!selectedSlotDetails} onOpenChange={(open) => !open && setSelectedSlotDetails(null)}>
             <DialogContent className="max-w-3xl rounded-[3rem] p-10 bg-white dark:bg-slate-900 border-none shadow-2xl">
@@ -391,14 +393,14 @@ export default function Locations() {
                      </DialogHeader>
                      
                      <div className="space-y-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">Active Custody Stock Details</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">{t('locations.activeCustodyDetails', 'Active Custody Stock Details')}</p>
                         <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-4">
                            {(() => {
                               const slotStocks = stocks.filter(s => s.locationId === selectedSlotDetails.loc.id && s.subSlot === selectedSlotDetails.slot && s.quantity > 0);
                               if (slotStocks.length === 0) {
                                  return (
                                     <div className="py-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-                                       <p className="text-xs text-slate-400 italic">This sub-slot is currently empty.</p>
+                                       <p className="text-xs text-slate-400 italic">{t('locations.emptySubSlot', 'This sub-slot is currently empty.')}</p>
                                     </div>
                                  );
                               }
@@ -410,7 +412,7 @@ export default function Locations() {
                                           {stock.mark && <Badge className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase tracking-widest">Mark: {stock.mark}</Badge>}
                                        </div>
                                        <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase leading-none">{stock.clientName}</h4>
-                                       {stock.farmerName && <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Farmer: {stock.farmerName}</p>}
+                                       {stock.farmerName && <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('locations.farmer', 'Farmer')}: {stock.farmerName}</p>}
                                        <p className="text-[11px] text-slate-600 dark:text-slate-300 font-bold uppercase mt-2">
                                           {stock.commodityName} <span className="text-slate-400">›</span> <span className="text-emerald-500">{stock.varietyName}</span>
                                        </p>
@@ -419,7 +421,7 @@ export default function Locations() {
                                        <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
                                           <Boxes className="h-6 w-6 text-emerald-500" />
                                        </div>
-                                       <p className="text-xl font-black italic text-emerald-500 tracking-tighter">{stock.quantity} <span className="text-[9px] font-bold text-slate-400 uppercase not-italic tracking-widest">Bags</span></p>
+                                       <p className="text-xl font-black italic text-emerald-500 tracking-tighter">{stock.quantity} <span className="text-[9px] font-bold text-slate-400 uppercase not-italic tracking-widest">{t('locations.bags', 'Bags')}</span></p>
                                     </div>
                                  </motion.div>
                               ));
